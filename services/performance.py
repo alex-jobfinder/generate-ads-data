@@ -36,64 +36,6 @@ from services.performance_utils import (
 import json
 
 
-#!/usr/bin/env python3
-"""
-Create DataFrame with 24 hours of timestamp data
-One row per second for the last 24 hours
-"""
-
-# import pandas as pd
-# from datetime import datetime, timedelta
-
-# """
-# CREATE TABLE timestamp_data (
-#     id INTEGER PRIMARY KEY AUTOINCREMENT,
-#     unix_timestamp INTEGER NOT NULL,
-#     human_readable TEXT NOT NULL,
-#     hour_of_day INTEGER NOT NULL,
-#     minute_of_hour INTEGER NOT NULL,
-#     second_of_minute INTEGER NOT NULL,
-#     day_of_week INTEGER NOT NULL,
-#     is_business_hour BOOLEAN NOT NULL,
-#     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-# );
-# """
-
-# class TimestampDataGenerator:
-#     """Generate 24 hours of timestamp data as a DataFrame"""
-    
-#     def __init__(self):
-#         self.df = None
-    
-#     def generate_data(self, hours_back=24):
-#         """Generate timestamp data for the specified number of hours back"""
-#         # Calculate start time
-#         now = datetime.now()
-#         start_time = now - timedelta(hours=hours_back)
-        
-#         # Generate timestamps
-#         timestamps = []
-#         current_time = start_time
-        
-#         while current_time <= now:
-#             timestamps.append(current_time)
-#             current_time += timedelta(seconds=1)
-        
-#         # Create DataFrame
-#         self.df = pd.DataFrame({
-#             'unix_timestamp': [int(ts.timestamp()) for ts in timestamps],
-#             'human_readable': [ts.strftime('%Y-%m-%d %H:%M:%S') for ts in timestamps],
-#             'hour_of_day': [ts.hour for ts in timestamps],
-#             'minute_of_hour': [ts.minute for ts in timestamps],
-#             'second_of_minute': [ts.second for ts in timestamps],
-#             'day_of_week': [ts.weekday() for ts in timestamps],  # 0=Monday, 6=Sunday
-#             'is_business_hour': [
-#                 (ts.weekday() < 5 and 9 <= ts.hour < 17)  # Mon-Fri, 9 AM - 5 PM
-#                 for ts in timestamps
-#             ]
-#         })
-        
-#         return self.df
 
 class TimestampDataGenerator:
     """Generate temporal factors for performance data generation."""
