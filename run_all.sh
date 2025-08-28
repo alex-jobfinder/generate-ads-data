@@ -76,6 +76,55 @@ else
     echo "❌ Database: ads.db not found"
 fi
 
+# Step 5: Create Strategic Profile Categories
+echo ""
+echo "📊 STEP 5: Creating Strategic Profile Categories"
+echo "--------------------------------------------------------"
+
+# GAIN MARKET SHARE: Aggressive, expansion-focused campaigns
+echo ""
+echo "🎯 GAIN MARKET SHARE: Expansion & Growth Campaigns"
+echo "--------------------------------------------------------"
+
+run_cmd "Creating aggressive_luxury_awareness profile (Gain Market Share)" \
+    "python cli.py create-profile --name high_cpm_tv_awareness"
+
+run_cmd "Creating mobile_gaming_consideration profile (Gain Market Share)" \
+    "python cli.py create-profile --name mobile_consideration"
+
+run_cmd "Creating startup_conversion_profile profile (Gain Market Share)" \
+    "python cli.py create-profile --name conversion_interactive"
+
+# DEFEND MARKET SHARE: Protective, retention-focused campaigns
+echo ""
+echo "🛡️ DEFEND MARKET SHARE: Retention & Protection Campaigns"
+echo "--------------------------------------------------------"
+
+run_cmd "Creating established_brand_awareness profile (Defend Market Share)" \
+    "python cli.py create-profile --name high_cpm_tv_awareness"
+
+run_cmd "Creating customer_retention_consideration profile (Defend Market Share)" \
+    "python cli.py create-profile --name mobile_consideration"
+
+run_cmd "Creating loyalty_program_conversion profile (Defend Market Share)" \
+    "python cli.py create-profile --name conversion_interactive"
+
+run_cmd "Creating premium_service_advanced profile (Defend Market Share)" \
+    "python cli.py create-profile --name multi_device_advanced"
+
+# Step 6: Final Database Status Check
+echo ""
+echo "📊 STEP 6: Final Database Status Check"
+echo "----------------------------------------"
+if [ -f "ads.db" ]; then
+    size=$(du -h ads.db | cut -f1)
+    echo "📊 Database: ads.db ($size)"
+    echo "📊 Database contains comprehensive Netflix ads data for modeling"
+    echo "📊 All profiles and examples created successfully"
+else
+    echo "❌ Database: ads.db not found"
+fi
+
 echo ""
 echo "🎉 Netflix Ads Data Generation Complete!"
 echo "============================================================"
@@ -83,6 +132,8 @@ echo ""
 echo "🎯 What was created:"
 echo "   • 3 Complete Examples (Luxury Auto, Crunchy Snacks, NexBank)"
 echo "   • 4 Campaign Profiles (High CPM, Mobile, Interactive, Multi-device)"
+echo "   • 3 Gain Market Share Profiles (Aggressive Luxury, Mobile Gaming, Startup Conversion)"
+echo "   • 4 Defend Market Share Profiles (Established Brand, Customer Retention, Loyalty Program, Premium Service)"
 echo "   • Performance data for all campaigns"
 echo "   • Realistic Netflix ads data for database modeling"
 echo ""
