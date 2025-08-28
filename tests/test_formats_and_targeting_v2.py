@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from decimal import Decimal
-import pytest
 
+import pytest
 
 from models.registry import registry
 
@@ -29,7 +29,11 @@ def test_line_item_targeting_whitelist_accepts_known_keys() -> None:
             registry.TargetingKey.GENDER.value: "ALL",
             registry.TargetingKey.HOUSEHOLD_INCOME.value: "MID",
         },
-        creatives=[registry.CreativeCreate(asset_url="https://example.com/ad.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15)],
+        creatives=[
+            registry.CreativeCreate(
+                asset_url="https://example.com/ad.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15
+            )
+        ],
     )
     assert li.targeting[registry.TargetingKey.DEVICE.value] == ["TV"]
 
@@ -38,11 +42,15 @@ def test_line_item_targeting_whitelist_rejects_unknown_keys() -> None:
     with pytest.raises(ValueError):
         registry.LineItemCreate(
             name="LI Bad",
-                    ad_format=registry.AdFormat.standard_video,
-        bid_cpm=Decimal("55.00"),
-        pacing_pct=100,
-        targeting={"unknown_key": True},
-        creatives=[registry.CreativeCreate(asset_url="https://example.com/ad.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15)],
+            ad_format=registry.AdFormat.standard_video,
+            bid_cpm=Decimal("55.00"),
+            pacing_pct=100,
+            targeting={"unknown_key": True},
+            creatives=[
+                registry.CreativeCreate(
+                    asset_url="https://example.com/ad.mp4",
+                    mime_type=registry.CreativeMimeType.mp4,
+                    duration_seconds=15,
+                )
+            ],
         )
-
-

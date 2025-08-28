@@ -19,7 +19,13 @@ def test_config_env_overrides_db_url_and_logger_level(monkeypatch, tmp_path) -> 
     db_file = tmp_path / "ads_p1.db"
     monkeypatch.setenv("ADS_DB_URL", f"sqlite:///{db_file}")
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
-    proc = _run([sys.executable, "-c", "import db_utils; print(db_utils.get_settings().ADS_DB_URL); print(db_utils.get_logger().level)"])
+    proc = _run(
+        [
+            sys.executable,
+            "-c",
+            "import db_utils; print(db_utils.get_settings().ADS_DB_URL); print(db_utils.get_logger().level)",
+        ]
+    )
     assert proc.returncode == 0, proc.stderr
     lines = proc.stdout.strip().splitlines()
     assert lines[0].endswith(str(db_file))
@@ -50,10 +56,11 @@ def test_cli_typer_json_and_exit_codes(monkeypatch, tmp_path) -> None:
 def test_init_db_respects_ads_db_url_env(tmp_path, monkeypatch):
     db_file = tmp_path / "typer_cli.db"
     monkeypatch.setenv("ADS_DB_URL", f"sqlite:///{db_file}")
-    proc = _run([sys.executable, "cli.py", "init-db"]) 
+    proc = _run([sys.executable, "cli.py", "init-db"])
     assert proc.returncode == 0, proc.stderr
-    import db_utils as db_module
     from importlib import reload
+
+    import db_utils as db_module
 
     reload(db_module)
     with db_module.engine.connect() as conn:
@@ -64,11 +71,9 @@ def test_init_db_respects_ads_db_url_env(tmp_path, monkeypatch):
 def test_cli_accepts_seed_flag(tmp_path, monkeypatch):
     db_file = tmp_path / "seed_cli.db"
     monkeypatch.setenv("ADS_DB_URL", f"sqlite:///{db_file}")
-    _ = _run([sys.executable, "cli.py", "init-db"])  
+    _ = _run([sys.executable, "cli.py", "init-db"])
     # Seed should be accepted and command should succeed
     proc = _run([sys.executable, "cli.py", "create-advertiser", "--auto", "--seed", "123"])
     assert proc.returncode == 0, proc.stderr
     data = json.loads(proc.stdout)
     assert "advertiser_id" in data
-
-

@@ -8,63 +8,63 @@ Recommended improvements:
 """
 from __future__ import annotations
 
-from decimal import Decimal
 from datetime import date, datetime
+from typing import Optional
 
 from sqlalchemy import (  # type: ignore
-    String,
-    Integer,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
+    Index,
+    Integer,
     Numeric,
+    String,
     Text,
     func,
-    Index,
-    CheckConstraint,
-    Enum as SAEnum,
-    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column  # type: ignore
+
 from models.enums import (
-    EntityStatusStr,
-    Objective,
+    AdFormat,
+    AdPlacement,
+    AdServerType,
+    AspectRatio,
+    AudioChannels,
+    AudioCodec,
+    BudgetType,
+    ChromaSubsampling,
+    CleanRoomProvider,
+    ColorPrimaries,
+    ContentAdjacencyTier,
+    CreativeMimeType,
     Currency,
     DspPartner,
-    ProgrammaticBuyType,
-    ContentAdjacencyTier,
-    MeasurementPartner,
-    CleanRoomProvider,
-    AdFormat,
-    AdServerType,
-    PixelVendor,
-    GeoTier,
-    CreativeMimeType,
     FileFormat,
-    AdPlacement,
     FrameRate,
     FrameRateMode,
-    AspectRatio,
+    FreqCapScope,
+    FreqCapUnit,
+    GeoTier,
+    MeasurementPartner,
+    Objective,
+    PixelVendor,
+    ProgrammaticBuyType,
+    QAStatus,
     ScanType,
+    TransferFunction,
     VideoCodecH264Profile,
     VideoCodecProresProfile,
-    ChromaSubsampling,
-    ColorPrimaries,
-    TransferFunction,
-    AudioCodec,
-    AudioChannels,
-    FreqCapUnit,
-    FreqCapScope,
-    BudgetType,
-    QAStatus,
     enum_check_column,
+)
+from models.enums import (
     status_column as reusable_status_column,
 )
 
-from typing import Optional
 
 class Base(DeclarativeBase):
     pass
+
 
 class EntityBase(Base):
     __abstract__ = True
@@ -74,9 +74,7 @@ class EntityBase(Base):
 
     # No inline definition; use reusable helper from enums
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
@@ -92,14 +90,14 @@ class Advertiser(EntityBase):
     status: Mapped[str] = reusable_status_column()
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     brand: Mapped[str | None] = mapped_column(String(255))
     contact_email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     agency_name: Mapped[str | None] = mapped_column(String(255))
-    
 
-    
 
 class Campaign(EntityBase):
     __tablename__ = "campaigns"
@@ -108,7 +106,9 @@ class Campaign(EntityBase):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = reusable_status_column()
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     advertiser_id: Mapped[int] = mapped_column(
         ForeignKey("advertisers.id", ondelete="CASCADE", onupdate="CASCADE"),
@@ -121,22 +121,36 @@ class Campaign(EntityBase):
     target_cpm: Mapped[int] = mapped_column(Integer, nullable=False)
 
     dsp_partner: Mapped[str] = enum_check_column(DspPartner, column_name="dsp_partner", nullable=False)
-    programmatic_buy_type: Mapped[str | None] = enum_check_column(ProgrammaticBuyType, column_name="programmatic_buy_type", nullable=True)
-    programmatic_partner: Mapped[str | None] = enum_check_column(DspPartner, column_name="programmatic_partner", nullable=True)
-    content_adjacency_tier: Mapped[str | None] = enum_check_column(ContentAdjacencyTier, column_name="content_adjacency_tier", nullable=True)
+    programmatic_buy_type: Mapped[str | None] = enum_check_column(
+        ProgrammaticBuyType, column_name="programmatic_buy_type", nullable=True
+    )
+    programmatic_partner: Mapped[str | None] = enum_check_column(
+        DspPartner, column_name="programmatic_partner", nullable=True
+    )
+    content_adjacency_tier: Mapped[str | None] = enum_check_column(
+        ContentAdjacencyTier, column_name="content_adjacency_tier", nullable=True
+    )
 
     brand_lift_enabled: Mapped[int | None] = mapped_column(Integer, nullable=True)
     attention_metrics_enabled: Mapped[int | None] = mapped_column(Integer, nullable=True)
     __table_args__ = (
-        CheckConstraint("brand_lift_enabled IN (0,1) OR brand_lift_enabled IS NULL", name="ck_campaign_brand_lift_bool"),
-        CheckConstraint("attention_metrics_enabled IN (0,1) OR attention_metrics_enabled IS NULL", name="ck_campaign_attention_bool"),
+        CheckConstraint(
+            "brand_lift_enabled IN (0,1) OR brand_lift_enabled IS NULL", name="ck_campaign_brand_lift_bool"
+        ),
+        CheckConstraint(
+            "attention_metrics_enabled IN (0,1) OR attention_metrics_enabled IS NULL",
+            name="ck_campaign_attention_bool",
+        ),
     )
 
-    clean_room_provider: Mapped[str | None] = enum_check_column(CleanRoomProvider, column_name="clean_room_provider", nullable=True)
-    measurement_partner: Mapped[str | None] = enum_check_column(MeasurementPartner, column_name="measurement_partner", nullable=True)
-    external_ref: Mapped[str | None] = mapped_column(String(64), index=True)    
-    
-    
+    clean_room_provider: Mapped[str | None] = enum_check_column(
+        CleanRoomProvider, column_name="clean_room_provider", nullable=True
+    )
+    measurement_partner: Mapped[str | None] = enum_check_column(
+        MeasurementPartner, column_name="measurement_partner", nullable=True
+    )
+    external_ref: Mapped[str | None] = mapped_column(String(64), index=True)
+
 
 class LineItem(EntityBase):
     __tablename__ = "line_items"
@@ -145,8 +159,12 @@ class LineItem(EntityBase):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = reusable_status_column()
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
+    )
     ad_format: Mapped[str] = enum_check_column(AdFormat, column_name="ad_format", nullable=False)
     bid_cpm: Mapped[int] = mapped_column(Integer, nullable=False)
     pacing_pct: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -166,8 +184,12 @@ class Creative(EntityBase):
     name: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = reusable_status_column()
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    line_item_id: Mapped[int] = mapped_column(ForeignKey("line_items.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+    line_item_id: Mapped[int] = mapped_column(
+        ForeignKey("line_items.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
+    )
     asset_url: Mapped[str] = mapped_column(Text, nullable=False)
     checksum: Mapped[str | None] = mapped_column(String(64))
     mime_type: Mapped[str] = enum_check_column(CreativeMimeType, column_name="mime_type", nullable=False)
@@ -179,14 +201,26 @@ class Creative(EntityBase):
     width: Mapped[int | None] = mapped_column(Integer)
     height: Mapped[int | None] = mapped_column(Integer)
     frame_rate: Mapped[str | None] = enum_check_column(FrameRate, column_name="frame_rate", nullable=True)
-    frame_rate_mode: Mapped[str | None] = enum_check_column(FrameRateMode, column_name="frame_rate_mode", nullable=True)
+    frame_rate_mode: Mapped[str | None] = enum_check_column(
+        FrameRateMode, column_name="frame_rate_mode", nullable=True
+    )
     aspect_ratio: Mapped[str | None] = enum_check_column(AspectRatio, column_name="aspect_ratio", nullable=True)
     scan_type: Mapped[str | None] = enum_check_column(ScanType, column_name="scan_type", nullable=True)
-    video_codec_h264_profile: Mapped[str | None] = enum_check_column(VideoCodecH264Profile, column_name="video_codec_h264_profile", nullable=True)
-    video_codec_prores_profile: Mapped[str | None] = enum_check_column(VideoCodecProresProfile, column_name="video_codec_prores_profile", nullable=True)
-    chroma_subsampling: Mapped[str | None] = enum_check_column(ChromaSubsampling, column_name="chroma_subsampling", nullable=True)
-    color_primaries: Mapped[str | None] = enum_check_column(ColorPrimaries, column_name="color_primaries", nullable=True)
-    transfer_function: Mapped[str | None] = enum_check_column(TransferFunction, column_name="transfer_function", nullable=True)
+    video_codec_h264_profile: Mapped[str | None] = enum_check_column(
+        VideoCodecH264Profile, column_name="video_codec_h264_profile", nullable=True
+    )
+    video_codec_prores_profile: Mapped[str | None] = enum_check_column(
+        VideoCodecProresProfile, column_name="video_codec_prores_profile", nullable=True
+    )
+    chroma_subsampling: Mapped[str | None] = enum_check_column(
+        ChromaSubsampling, column_name="chroma_subsampling", nullable=True
+    )
+    color_primaries: Mapped[str | None] = enum_check_column(
+        ColorPrimaries, column_name="color_primaries", nullable=True
+    )
+    transfer_function: Mapped[str | None] = enum_check_column(
+        TransferFunction, column_name="transfer_function", nullable=True
+    )
     bitrate_kbps: Mapped[int | None] = mapped_column(Integer)
     file_size_bytes: Mapped[int | None] = mapped_column(Integer)
     audio_codec: Mapped[str | None] = enum_check_column(AudioCodec, column_name="audio_codec", nullable=True)
@@ -204,31 +238,42 @@ class Creative(EntityBase):
 class Flight(Base):
     __tablename__ = "flights"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False)
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
+    )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class Budget(Base):
     __tablename__ = "budgets"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False)
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
+    )
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
     type: Mapped[str] = enum_check_column(BudgetType, column_name="type", nullable=False)
     currency: Mapped[str] = enum_check_column(Currency, column_name="currency", default="USD", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class FrequencyCap(Base):
     __tablename__ = "frequency_caps"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False)
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
+    )
     count: Mapped[int] = mapped_column(Integer, nullable=False)
     unit: Mapped[str] = enum_check_column(FreqCapUnit, column_name="unit", nullable=False)
     scope: Mapped[str] = enum_check_column(FreqCapScope, column_name="scope", nullable=False)
+
 
 # Indexes
 Index("ix_campaign_status_created", Campaign.status, Campaign.created_at)
@@ -237,6 +282,7 @@ Index("ix_campaigns_content_adjacency_tier", Campaign.content_adjacency_tier)
 Index("ix_line_items_geo_tier", LineItem.geo_tier)
 Index("ix_creatives_placement_duration", Creative.placement, Creative.duration_seconds)
 Index("ix_creatives_file_format_mime_type", Creative.file_format, Creative.mime_type)
+
 
 class CampaignPerformance(Base):
     __tablename__ = "campaign_performance"
@@ -258,9 +304,9 @@ class CampaignPerformance(Base):
         CheckConstraint("clicks <= impressions", name="ck_cp_clicks_le_impressions"),
         CheckConstraint("video_start <= impressions", name="ck_cp_video_start_le_impressions"),
         CheckConstraint("reach <= impressions", name="ck_cp_reach_le_impressions"),
-        Index("ix_campaign_performance_campaign_hour", "campaign_id", "hour_ts", unique=True)
+        Index("ix_campaign_performance_campaign_hour", "campaign_id", "hour_ts", unique=True),
     )
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     campaign_id: Mapped[int] = mapped_column(
         ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
@@ -268,43 +314,69 @@ class CampaignPerformance(Base):
     hour_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     impressions: Mapped[int] = mapped_column(Integer, nullable=False)
     clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    ctr: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.0)  # Click-through rate as decimal (0.0000-1.0000)
+    ctr: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.0
+    )  # Click-through rate as decimal (0.0000-1.0000)
     completion_rate: Mapped[int] = mapped_column(Integer, nullable=False)  # store as percentage 0..100
-    render_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.0)  # Render rate as decimal (0.0000-1.0000)
-    fill_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.0)  # Fill rate as decimal (0.0000-1.0000)
-    response_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.0)  # Response rate as decimal (0.0000-1.0000)
-    video_skip_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.0)  # Video skip rate as decimal (0.0000-1.0000)
+    render_rate: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.0
+    )  # Render rate as decimal (0.0000-1.0000)
+    fill_rate: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.0
+    )  # Fill rate as decimal (0.0000-1.0000)
+    response_rate: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.0
+    )  # Response rate as decimal (0.0000-1.0000)
+    video_skip_rate: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.0
+    )  # Video skip rate as decimal (0.0000-1.0000)
     video_start: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # Video start count
     frequency: Mapped[int] = mapped_column(Integer, nullable=False)
     reach: Mapped[int] = mapped_column(Integer, nullable=False)
     # Optional: enrich with audience composition reflecting simple preferences
     audience_json: Mapped[str | None] = mapped_column(Text)
-    
+
     # Extended performance metrics (raw data only)
     requests: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Total ad requests made")
     responses: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Total responses received")
-    eligible_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Impressions eligible after targeting")
+    eligible_impressions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Impressions eligible after targeting"
+    )
     auctions_won: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Auctions won")
-    viewable_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Viewable impressions")
+    viewable_impressions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Viewable impressions"
+    )
     audible_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Audible impressions")
-    video_q25: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 25% completion")
-    video_q50: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 50% completion")
-    video_q75: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 75% completion")
-    video_q100: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 100% completion")
+    video_q25: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Video ads that reached 25% completion"
+    )
+    video_q50: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Video ads that reached 50% completion"
+    )
+    video_q75: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Video ads that reached 75% completion"
+    )
+    video_q100: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Video ads that reached 100% completion"
+    )
     skips: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that were skipped")
     qr_scans: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="QR code scans")
-    interactive_engagements: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Interactive engagements")
+    interactive_engagements: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Interactive engagements"
+    )
     spend: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Total spend in cents")
     error_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Error count")
     timeout_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Timeout count")
-    
+
     # Temporal breakdown columns
     human_readable: Mapped[str] = mapped_column(Text, nullable=False, comment="Human-readable timestamp string")
     hour_of_day: Mapped[int] = mapped_column(Integer, nullable=False, comment="Hour of day (0-23)")
     minute_of_hour: Mapped[int] = mapped_column(Integer, nullable=False, comment="Minute of hour (0-59)")
     second_of_minute: Mapped[int] = mapped_column(Integer, nullable=False, comment="Second of minute (0-59)")
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False, comment="Day of week (0=Monday, 6=Sunday)")
-    is_business_hour: Mapped[bool] = mapped_column(Integer, nullable=False, comment="Whether this is during business hours (0/1)")
+    is_business_hour: Mapped[bool] = mapped_column(
+        Integer, nullable=False, comment="Whether this is during business hours (0/1)"
+    )
 
     # ctr_recalc: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)")
     # viewability_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)")
@@ -318,6 +390,7 @@ class CampaignPerformance(Base):
     # error_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Error rate (errors/requests)")
     # timeout_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Timeout rate (timeouts/requests)")
     # supply_funnel_efficiency: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)")
+
 
 """
 -- Campaign-hour performance (extended) focused on CTV/video with Netflix core metrics
@@ -350,18 +423,19 @@ CREATE TABLE campaign_performance_extended (
 	error_count INTEGER NOT NULL, -- Player/serve errors
 	timeout_count INTEGER NOT NULL, -- Request timeouts
 	comment TEXT, -- Additional notes or metadata about the campaign performance data
-	PRIMARY KEY (id), 
-	CONSTRAINT ck_cpe_supply_nonneg CHECK (requests >= 0 AND responses >= 0 AND eligible_impressions >= 0 AND auctions_won >= 0), 
-	CONSTRAINT ck_cpe_imps_nonneg CHECK (impressions >= 0 AND viewable_impressions >= 0 AND audible_impressions >= 0), 
-	CONSTRAINT ck_cpe_quartiles_nonneg CHECK (video_starts >= 0 AND video_q25 >= 0 AND video_q50 >= 0 AND video_q75 >= 0 AND video_q100 >= 0), 
-	CONSTRAINT ck_cpe_video_misc_nonneg CHECK (skips >= 0 AND avg_watch_time_seconds >= 0), 
-	CONSTRAINT ck_cpe_interactions_nonneg CHECK (clicks >= 0 AND qr_scans >= 0 AND interactive_engagements >= 0), 
-	CONSTRAINT ck_cpe_reach_freq_nonneg CHECK (reach >= 0 AND frequency >= 0), 
-	CONSTRAINT ck_cpe_spend_nonneg CHECK (spend >= 0 AND effective_cpm >= 0), 
-	CONSTRAINT ck_cpe_errors_nonneg CHECK (error_count >= 0 AND timeout_count >= 0), 
+	PRIMARY KEY (id),
+	CONSTRAINT ck_cpe_supply_nonneg CHECK (requests >= 0 AND responses >= 0 AND eligible_impressions >= 0 AND auctions_won >= 0),
+	CONSTRAINT ck_cpe_imps_nonneg CHECK (impressions >= 0 AND viewable_impressions >= 0 AND audible_impressions >= 0),
+	CONSTRAINT ck_cpe_quartiles_nonneg CHECK (video_starts >= 0 AND video_q25 >= 0 AND video_q50 >= 0 AND video_q75 >= 0 AND video_q100 >= 0),
+	CONSTRAINT ck_cpe_video_misc_nonneg CHECK (skips >= 0 AND avg_watch_time_seconds >= 0),
+	CONSTRAINT ck_cpe_interactions_nonneg CHECK (clicks >= 0 AND qr_scans >= 0 AND interactive_engagements >= 0),
+	CONSTRAINT ck_cpe_reach_freq_nonneg CHECK (reach >= 0 AND frequency >= 0),
+	CONSTRAINT ck_cpe_spend_nonneg CHECK (spend >= 0 AND effective_cpm >= 0),
+	CONSTRAINT ck_cpe_errors_nonneg CHECK (error_count >= 0 AND timeout_count >= 0),
 	FOREIGN KEY(campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE ON UPDATE CASCADE
 )
 """
+
 
 class CampaignPerformanceExtended(Base):
     """
@@ -383,15 +457,23 @@ class CampaignPerformanceExtended(Base):
             name="ck_cpe_quartiles_nonneg",
         ),
         CheckConstraint("skips >= 0 AND avg_watch_time_seconds >= 0", name="ck_cpe_video_misc_nonneg"),
-        CheckConstraint("clicks >= 0 AND qr_scans >= 0 AND interactive_engagements >= 0", name="ck_cpe_interactions_nonneg"),
+        CheckConstraint(
+            "clicks >= 0 AND qr_scans >= 0 AND interactive_engagements >= 0", name="ck_cpe_interactions_nonneg"
+        ),
         CheckConstraint("reach >= 0 AND frequency >= 0", name="ck_cpe_reach_freq_nonneg"),
         CheckConstraint("spend >= 0 AND effective_cpm >= 0", name="ck_cpe_spend_nonneg"),
         CheckConstraint("error_count >= 0 AND timeout_count >= 0", name="ck_cpe_errors_nonneg"),
         # Relaxed logical constraints - allow small variations for realistic data
         CheckConstraint("responses >= 0.9 * requests", name="ck_cpe_responses_reasonable"),  # Allow 10% variation
-        CheckConstraint("eligible_impressions >= 0.8 * responses", name="ck_cpe_eligible_reasonable"),  # Allow 20% variation
-        CheckConstraint("auctions_won >= 0.8 * eligible_impressions", name="ck_cpe_auctions_reasonable"),  # Allow 20% variation
-        CheckConstraint("impressions >= 0.6 * auctions_won", name="ck_cpe_impressions_reasonable"),  # Allow 40% variation - realistic for ad serving
+        CheckConstraint(
+            "eligible_impressions >= 0.8 * responses", name="ck_cpe_eligible_reasonable"
+        ),  # Allow 20% variation
+        CheckConstraint(
+            "auctions_won >= 0.8 * eligible_impressions", name="ck_cpe_auctions_reasonable"
+        ),  # Allow 20% variation
+        CheckConstraint(
+            "impressions >= 0.6 * auctions_won", name="ck_cpe_impressions_reasonable"
+        ),  # Allow 40% variation - realistic for ad serving
         CheckConstraint("viewable_impressions <= impressions", name="ck_cpe_viewable_le_impressions"),
         CheckConstraint("audible_impressions <= impressions", name="ck_cpe_audible_le_impressions"),
         CheckConstraint("video_starts <= impressions", name="ck_cpe_video_starts_le_impressions"),
@@ -406,7 +488,7 @@ class CampaignPerformanceExtended(Base):
         CheckConstraint("reach <= impressions", name="ck_cpe_reach_le_impressions"),
         CheckConstraint("frequency >= 1", name="ck_cpe_frequency_positive"),
         CheckConstraint("avg_watch_time_seconds <= 3600", name="ck_cpe_watch_time_reasonable"),  # Max 1 hour
-        Index("ix_cpe_campaign_hour_unique", "campaign_id", "hour_ts", unique=True)
+        Index("ix_cpe_campaign_hour_unique", "campaign_id", "hour_ts", unique=True),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="Surrogate PK")
@@ -426,33 +508,61 @@ class CampaignPerformanceExtended(Base):
     )
 
     # Supply funnel
-    requests: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Ad requests from player/device.")
-    responses: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Ad responses returned from ad server.")
-    eligible_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Responses passing filters.")
+    requests: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Ad requests from player/device."
+    )
+    responses: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Ad responses returned from ad server."
+    )
+    eligible_impressions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Responses passing filters."
+    )
     auctions_won: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Wins/selected responses.")
-    impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="NETFLIX CORE: Total ad impressions served.")
+    impressions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="NETFLIX CORE: Total ad impressions served."
+    )
 
     # Delivery quality
-    viewable_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Impressions meeting viewability standards.")
+    viewable_impressions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Impressions meeting viewability standards."
+    )
     audible_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Volume-on starts.")
 
     # Video progression
-    video_starts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="NETFLIX CORE: Number of video ads that began playing.")
-    video_q25: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Views reaching 25% completion.")
-    video_q50: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Views reaching 50% completion.")
-    video_q75: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Views reaching 75% completion.")
-    video_q100: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="NETFLIX CORE: Video completions.")
+    video_starts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="NETFLIX CORE: Number of video ads that began playing."
+    )
+    video_q25: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Views reaching 25% completion."
+    )
+    video_q50: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Views reaching 50% completion."
+    )
+    video_q75: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Views reaching 75% completion."
+    )
+    video_q100: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="NETFLIX CORE: Video completions."
+    )
     skips: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="NETFLIX CORE: Skips of video ads.")
-    avg_watch_time_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Average watch length in seconds.")
+    avg_watch_time_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Average watch length in seconds."
+    )
 
     # Interactions
-    clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="NETFLIX CORE: Total click-through interactions.")
+    clicks: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="NETFLIX CORE: Total click-through interactions."
+    )
     qr_scans: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="QR code scans (if tracked).")
-    interactive_engagements: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Interactive overlays/choices.")
+    interactive_engagements: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Interactive overlays/choices."
+    )
 
     # Reach & frequency
     reach: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Unique viewers in hour.")
-    frequency: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Average impressions per viewer in hour.")
+    frequency: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Average impressions per viewer in hour."
+    )
 
     # Spend / pricing
     spend: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Spend in account currency cents.")
@@ -463,25 +573,53 @@ class CampaignPerformanceExtended(Base):
     timeout_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Request timeouts.")
 
     # Optional metadata
-    comment: Mapped[Optional[str]] = mapped_column(Text, comment="Additional notes or metadata about the campaign performance data.")
-    
+    comment: Mapped[Optional[str]] = mapped_column(
+        Text, comment="Additional notes or metadata about the campaign performance data."
+    )
+
     # Temporal breakdown columns
     human_readable: Mapped[str] = mapped_column(Text, nullable=False, comment="Human-readable timestamp string")
     hour_of_day: Mapped[int] = mapped_column(Integer, nullable=False, comment="Hour of day (0-23)")
     minute_of_hour: Mapped[int] = mapped_column(Integer, nullable=False, comment="Minute of hour (0-59)")
     second_of_minute: Mapped[int] = mapped_column(Integer, nullable=False, comment="Second of minute (0-59)")
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False, comment="Day of week (0=Monday, 6=Sunday)")
-    is_business_hour: Mapped[bool] = mapped_column(Integer, nullable=False, comment="Whether this is during business hours (0/1)")
+    is_business_hour: Mapped[bool] = mapped_column(
+        Integer, nullable=False, comment="Whether this is during business hours (0/1)"
+    )
 
-    ctr_recalc: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)")
-    viewability_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)")
-    audibility_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Audibility rate (audible/impressions)")
-    video_start_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Video start rate (starts/impressions)")
-    video_completion_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Video completion rate (q100/starts)")
-    video_skip_rate_ext: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Extended video skip rate (skips/starts)")
-    qr_scan_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="QR scan rate (scans/impressions)")
-    interactive_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Interactive engagement rate")
-    auction_win_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Auction win rate (won/eligible)")
-    error_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Error rate (errors/requests)")
-    timeout_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Timeout rate (timeouts/requests)")
-    supply_funnel_efficiency: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)")
+    ctr_recalc: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)"
+    )
+    viewability_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)"
+    )
+    audibility_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Audibility rate (audible/impressions)"
+    )
+    video_start_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Video start rate (starts/impressions)"
+    )
+    video_completion_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Video completion rate (q100/starts)"
+    )
+    video_skip_rate_ext: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Extended video skip rate (skips/starts)"
+    )
+    qr_scan_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="QR scan rate (scans/impressions)"
+    )
+    interactive_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Interactive engagement rate"
+    )
+    auction_win_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Auction win rate (won/eligible)"
+    )
+    error_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Error rate (errors/requests)"
+    )
+    timeout_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Timeout rate (timeouts/requests)"
+    )
+    supply_funnel_efficiency: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)"
+    )

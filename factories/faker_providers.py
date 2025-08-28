@@ -14,10 +14,12 @@ from __future__ import annotations
 import random
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Tuple, Literal, Dict, Any
+from typing import Any, Dict, Literal, Tuple
 
 from faker import Faker
+
 from models.registry import registry
+
 
 fake = Faker()
 
@@ -40,15 +42,33 @@ def fake_advertiser() -> tuple[str, str, str | None, str | None]:
 
 def fake_campaign_dates() -> Tuple[date, date]:
     start = date.today() + timedelta(days=registry.CampaignDefaults.DEFAULT_CAMPAIGN_START_OFFSET_DAYS)
-    end = start + timedelta(days=random.randint(registry.CampaignDefaults.DEFAULT_CAMPAIGN_MIN_DURATION_DAYS, registry.CampaignDefaults.DEFAULT_CAMPAIGN_MAX_DURATION_DAYS))
+    end = start + timedelta(
+        days=random.randint(
+            registry.CampaignDefaults.DEFAULT_CAMPAIGN_MIN_DURATION_DAYS,
+            registry.CampaignDefaults.DEFAULT_CAMPAIGN_MAX_DURATION_DAYS,
+        )
+    )
     return start, end
 
 
 def fake_budget_and_cpm() -> tuple[Decimal, str, Decimal]:
     # Clamp CPM within configured bounds, then quantize
-    clamped = max(float(registry.PricingDefaults.DEFAULT_CPM_MIN), min(float(registry.PricingDefaults.DEFAULT_CPM_MAX), random.gauss(float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_MEAN), float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_STDDEV))))
+    clamped = max(
+        float(registry.PricingDefaults.DEFAULT_CPM_MIN),
+        min(
+            float(registry.PricingDefaults.DEFAULT_CPM_MAX),
+            random.gauss(
+                float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_MEAN),
+                float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_STDDEV),
+            ),
+        ),
+    )
     cpm = Decimal(str(clamped)).quantize(registry.BudgetDefaults.DECIMAL)
-    amount = Decimal(random.randint(int(registry.BudgetDefaults.DEFAULT_BUDGET_MIN), int(registry.BudgetDefaults.DEFAULT_BUDGET_MAX))).quantize(registry.BudgetDefaults.DECIMAL)
+    amount = Decimal(
+        random.randint(
+            int(registry.BudgetDefaults.DEFAULT_BUDGET_MIN), int(registry.BudgetDefaults.DEFAULT_BUDGET_MAX)
+        )
+    ).quantize(registry.BudgetDefaults.DECIMAL)
     btype = random.choice([registry.BudgetType.lifetime.value, registry.BudgetType.daily.value])  # v1 supports both
     return amount, btype, cpm
 
@@ -58,8 +78,14 @@ def fake_line_item_name() -> str:
 
 
 def fake_asset() -> tuple[str, str, int]:
-    url = fake.image_url(width=registry.CreativeDefaults.DEFAULT_IMAGE_WIDTH, height=registry.CreativeDefaults.DEFAULT_IMAGE_HEIGHT)
-    return url, registry.CreativeMimeType.mp4.value, random.choice(registry.CreativeDefaults.ALLOWED_CREATIVE_DURATIONS)
+    url = fake.image_url(
+        width=registry.CreativeDefaults.DEFAULT_IMAGE_WIDTH, height=registry.CreativeDefaults.DEFAULT_IMAGE_HEIGHT
+    )
+    return (
+        url,
+        registry.CreativeMimeType.mp4.value,
+        random.choice(registry.CreativeDefaults.ALLOWED_CREATIVE_DURATIONS),
+    )
 
 
 def fake_targeting_v2() -> dict:
@@ -67,7 +93,9 @@ def fake_targeting_v2() -> dict:
         registry.TargetingKey.DEVICE.value: [random.choice(["TV", "MOBILE", "DESKTOP", "TABLET"])],
         registry.TargetingKey.GEO_COUNTRY.value: [random.choice(["US", "CA", "GB", "DE"])],
         registry.TargetingKey.CONTENT_GENRE.value: [random.choice(["DRAMA", "COMEDY", "ACTION"])],
-        registry.TargetingKey.AGE_RANGE.value: random.choice([list(r) for r in registry.TargetingDefaults.DEFAULT_AGE_RANGES]),
+        registry.TargetingKey.AGE_RANGE.value: random.choice(
+            [list(r) for r in registry.TargetingDefaults.DEFAULT_AGE_RANGES]
+        ),
         registry.TargetingKey.GENDER.value: random.choice(["MALE", "FEMALE", "ALL"]),
         registry.TargetingKey.HOUSEHOLD_INCOME.value: random.choice(["LOW", "MID", "HIGH"]),
     }
@@ -85,7 +113,10 @@ def profile_tuned_cpm(profile: ProfileName) -> Decimal:
         "CONVERSION": 18.00,
     }[profile]
     std = float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_STDDEV)
-    clamped = max(float(registry.PricingDefaults.DEFAULT_CPM_MIN), min(float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_STDDEV), random.gauss(mean, std)))
+    clamped = max(
+        float(registry.PricingDefaults.DEFAULT_CPM_MIN),
+        min(float(registry.PricingDefaults.DEFAULT_CPM_GAUSS_STDDEV), random.gauss(mean, std)),
+    )
     return Decimal(str(clamped)).quantize(registry.BudgetDefaults.DECIMAL)
 
 
@@ -116,10 +147,10 @@ def profile_tuned_targeting(profile: ProfileName) -> Dict[str, Any]:
 
 
 def make_profile_creative(profile: ProfileName, asset_url: str | None = None) -> registry.CreativeCreate:
-    url = asset_url or fake.image_url(width=registry.CreativeDefaults.DEFAULT_IMAGE_WIDTH, height=registry.CreativeDefaults.DEFAULT_IMAGE_HEIGHT)
+    url = asset_url or fake.image_url(
+        width=registry.CreativeDefaults.DEFAULT_IMAGE_WIDTH, height=registry.CreativeDefaults.DEFAULT_IMAGE_HEIGHT
+    )
     mime = registry.CreativeMimeType.mp4
     duration = profile_tuned_duration(profile)
     # Pre-validate with schema
     return registry.CreativeCreate(asset_url=url, mime_type=mime, duration_seconds=duration)
-
-

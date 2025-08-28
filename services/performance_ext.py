@@ -1,6 +1,17 @@
 # performance_ext.py
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, computed_field
+from sqlalchemy import select
+
+from db_utils import session_scope
+from models.registry import registry
+from services.performance_utils import safe_div
+
+
 """
 Extended performance generation with Pydantic models for calculated fields.
 
@@ -10,7 +21,7 @@ calculated fields to existing performance data.
 
 NETFLIX CORE ADVERTISING METRICS (as documented by Netflix):
 - Impressions: Total ad impressions served
-- Clicks: Total click-through interactions  
+- Clicks: Total click-through interactions
 - CTR: Click-through rate (clicks/impressions)
 - Video Completion Rate: Percentage of video ads completed
 - Render Rate: Percentage of ads that rendered successfully
@@ -26,22 +37,10 @@ Design:
 - Follows Netflix's documented metric definitions and ranges.
 """
 
-from datetime import datetime, timedelta, timezone
-import math
-from typing import Iterable, Optional
-from decimal import Decimal
-
-from pydantic import BaseModel, Field, computed_field
-from sqlalchemy import select, update
-
-from db_utils import session_scope
-from models.registry import registry
-from services.performance_utils import safe_div
-
 
 class ExtendedPerformanceMetrics(BaseModel):
     """Extended performance metrics with calculated fields computed from raw data."""
-    
+
     # Raw data fields (from basic performance)
     campaign_id: int
     hour_ts: datetime
@@ -57,7 +56,7 @@ class ExtendedPerformanceMetrics(BaseModel):
     frequency: int
     reach: int
     audience_json: Optional[str]
-    
+
     # Extended raw fields (from basic performance)
     requests: int
     responses: int
@@ -75,7 +74,7 @@ class ExtendedPerformanceMetrics(BaseModel):
     spend: int
     error_count: int
     timeout_count: int
-    
+
     # Temporal fields
     human_readable: str
     hour_of_day: int
@@ -83,114 +82,114 @@ class ExtendedPerformanceMetrics(BaseModel):
     second_of_minute: int
     day_of_week: int
     is_business_hour: bool
-    
+
     model_config = {"arbitrary_types_allowed": True}
-    
+
     @computed_field
     @property
     def fill_rate_ext(self) -> float:
         """Percentage of ad requests that were filled."""
         return safe_div(self.eligible_impressions, self.requests)
-    
+
     @computed_field
     @property
     def viewability_rate(self) -> float:
         """Percentage of impressions that were viewable."""
         return safe_div(self.viewable_impressions, self.impressions)
-    
+
     @computed_field
     @property
     def audibility_rate(self) -> float:
         """Percentage of impressions that were audible."""
         return safe_div(self.audible_impressions, self.impressions)
-    
+
     @computed_field
     @property
     def video_start_rate(self) -> float:
         """Percentage of impressions that started video playback."""
         return safe_div(self.video_start, self.impressions)
-    
+
     @computed_field
     @property
     def video_completion_rate(self) -> float:
         """Percentage of video starts that completed (via q100)."""
         return safe_div(self.video_q100, self.video_start)
-    
+
     @computed_field
     @property
     def video_skip_rate_ext(self) -> float:
         """Percentage of video starts that were skipped."""
         return safe_div(self.skips, self.video_start)
-    
+
     @computed_field
     @property
     def qr_scan_rate(self) -> float:
         """QR scan rate."""
         return safe_div(self.qr_scans, self.impressions)
-    
+
     @computed_field
     @property
     def interactive_rate(self) -> float:
         """Interactive engagement rate."""
         return safe_div(self.interactive_engagements, self.impressions)
-    
+
     @computed_field
     @property
     def effective_cpm(self) -> int:
         """Effective CPM in cents."""
         return int(safe_div(self.spend * 1000, self.impressions))
-    
+
     @computed_field
     @property
     def avg_watch_time_seconds(self) -> float:
         """Average watch time in seconds (estimated from quartiles)."""
         if self.video_start <= 0:
             return 0.0
-        
+
         # Estimate from quartile data
         asset_seconds = 30  # Assume typical 30s assets
-        
+
         # Calculate weighted average from quartile segments
-        seg0 = max(0, self.video_start - self.video_q25)      # 0-25%
-        seg1 = max(0, self.video_q25 - self.video_q50)         # 25-50%
-        seg2 = max(0, self.video_q50 - self.video_q75)         # 50-75%
-        seg3 = max(0, self.video_q75 - self.video_q100)        # 75-100%
-        seg4 = max(0, self.video_q100)                         # 100%
-        
+        seg0 = max(0, self.video_start - self.video_q25)  # 0-25%
+        seg1 = max(0, self.video_q25 - self.video_q50)  # 25-50%
+        seg2 = max(0, self.video_q50 - self.video_q75)  # 50-75%
+        seg3 = max(0, self.video_q75 - self.video_q100)  # 75-100%
+        seg4 = max(0, self.video_q100)  # 100%
+
         # Midpoints for segments
         m0 = asset_seconds * 0.125
         m1 = asset_seconds * 0.375
         m2 = asset_seconds * 0.625
         m3 = asset_seconds * 0.875
         m4 = asset_seconds * 1.00
-        
+
         total_watch = seg0 * m0 + seg1 * m1 + seg2 * m2 + seg3 * m3 + seg4 * m4
         return safe_div(total_watch, self.video_start)
-    
+
     @computed_field
     @property
     def supply_funnel_efficiency(self) -> float:
         """Efficiency of supply funnel (eligible/requests)."""
         return safe_div(self.eligible_impressions, self.requests)
-    
+
     @computed_field
     @property
     def auction_win_rate(self) -> float:
         """Percentage of eligible impressions that won auctions."""
         return safe_div(self.auctions_won, self.eligible_impressions)
-    
+
     @computed_field
     @property
     def error_rate(self) -> float:
         """Error rate as percentage of requests."""
         return safe_div(self.error_count, self.requests)
-    
+
     @computed_field
     @property
     def timeout_rate(self) -> float:
         """Timeout rate as percentage of requests."""
         return safe_div(self.timeout_count, self.requests)
-    
+
     @computed_field
     @property
     def ctr_recalc(self) -> float:
@@ -205,11 +204,13 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
     """
     with session_scope() as s:
         # Get raw performance data from the basic table
-        raw_rows = s.execute(
-            select(registry.CampaignPerformance).where(
-                registry.CampaignPerformance.campaign_id == campaign_id
+        raw_rows = (
+            s.execute(
+                select(registry.CampaignPerformance).where(registry.CampaignPerformance.campaign_id == campaign_id)
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         if not raw_rows:
             return 0
@@ -222,66 +223,68 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
         processed = 0
         for raw_row in raw_rows:
             # Create the Pydantic model to compute calculated fields
-            extended_metrics = ExtendedPerformanceMetrics.model_validate({
-                "campaign_id": raw_row.campaign_id,
-                "hour_ts": raw_row.hour_ts,
-                "impressions": raw_row.impressions,
-                "clicks": raw_row.clicks,
-                "ctr": raw_row.ctr,
-                "completion_rate": raw_row.completion_rate,
-                "render_rate": raw_row.render_rate,
-                "fill_rate": raw_row.fill_rate,
-                "response_rate": raw_row.response_rate,
-                "video_skip_rate": raw_row.video_skip_rate,
-                "video_start": raw_row.video_start,
-                "frequency": raw_row.frequency,
-                "reach": raw_row.reach,
-                "audience_json": raw_row.audience_json,
-                "requests": raw_row.requests,
-                "responses": raw_row.responses,
-                "eligible_impressions": raw_row.eligible_impressions,
-                "auctions_won": raw_row.auctions_won,
-                "viewable_impressions": raw_row.viewable_impressions,
-                "audible_impressions": raw_row.audible_impressions,
-                "video_q25": raw_row.video_q25,
-                "video_q50": raw_row.video_q50,
-                "video_q75": raw_row.video_q75,
-                "video_q100": raw_row.video_q100,
-                "skips": raw_row.skips,
-                "qr_scans": raw_row.qr_scans,
-                "interactive_engagements": raw_row.interactive_engagements,
-                "spend": raw_row.spend,
-                "error_count": raw_row.error_count,
-                "timeout_count": raw_row.timeout_count,
-                "hour_of_day": raw_row.hour_of_day,
-                "minute_of_hour": raw_row.minute_of_hour,
-                "second_of_minute": raw_row.second_of_minute,
-                "day_of_week": raw_row.day_of_week,
-                "is_business_hour": raw_row.is_business_hour,
-                "human_readable": raw_row.human_readable,
-            })
-            
+            extended_metrics = ExtendedPerformanceMetrics.model_validate(
+                {
+                    "campaign_id": raw_row.campaign_id,
+                    "hour_ts": raw_row.hour_ts,
+                    "impressions": raw_row.impressions,
+                    "clicks": raw_row.clicks,
+                    "ctr": raw_row.ctr,
+                    "completion_rate": raw_row.completion_rate,
+                    "render_rate": raw_row.render_rate,
+                    "fill_rate": raw_row.fill_rate,
+                    "response_rate": raw_row.response_rate,
+                    "video_skip_rate": raw_row.video_skip_rate,
+                    "video_start": raw_row.video_start,
+                    "frequency": raw_row.frequency,
+                    "reach": raw_row.reach,
+                    "audience_json": raw_row.audience_json,
+                    "requests": raw_row.requests,
+                    "responses": raw_row.responses,
+                    "eligible_impressions": raw_row.eligible_impressions,
+                    "auctions_won": raw_row.auctions_won,
+                    "viewable_impressions": raw_row.viewable_impressions,
+                    "audible_impressions": raw_row.audible_impressions,
+                    "video_q25": raw_row.video_q25,
+                    "video_q50": raw_row.video_q50,
+                    "video_q75": raw_row.video_q75,
+                    "video_q100": raw_row.video_q100,
+                    "skips": raw_row.skips,
+                    "qr_scans": raw_row.qr_scans,
+                    "interactive_engagements": raw_row.interactive_engagements,
+                    "spend": raw_row.spend,
+                    "error_count": raw_row.error_count,
+                    "timeout_count": raw_row.timeout_count,
+                    "hour_of_day": raw_row.hour_of_day,
+                    "minute_of_hour": raw_row.minute_of_hour,
+                    "second_of_minute": raw_row.second_of_minute,
+                    "day_of_week": raw_row.day_of_week,
+                    "is_business_hour": raw_row.is_business_hour,
+                    "human_readable": raw_row.human_readable,
+                }
+            )
+
             # Calculate avg_watch_time_seconds (estimated from quartiles)
             asset_seconds = 30.0
             if raw_row.video_start > 0:
-                seg0 = max(0, raw_row.video_start - raw_row.video_q25)      # 0-25%
-                seg1 = max(0, raw_row.video_q25 - raw_row.video_q50)       # 25-50%
-                seg2 = max(0, raw_row.video_q50 - raw_row.video_q75)       # 50-75%
-                seg3 = max(0, raw_row.video_q75 - raw_row.video_q100)      # 75-100%
-                seg4 = max(0, raw_row.video_q100)                          # 100%
-                
+                seg0 = max(0, raw_row.video_start - raw_row.video_q25)  # 0-25%
+                seg1 = max(0, raw_row.video_q25 - raw_row.video_q50)  # 25-50%
+                seg2 = max(0, raw_row.video_q50 - raw_row.video_q75)  # 50-75%
+                seg3 = max(0, raw_row.video_q75 - raw_row.video_q100)  # 75-100%
+                seg4 = max(0, raw_row.video_q100)  # 100%
+
                 m0, m1, m2, m3, m4 = (0.125, 0.375, 0.625, 0.875, 1.0)
                 total_watch = (
-                    seg0 * (asset_seconds * m0) +
-                    seg1 * (asset_seconds * m1) +
-                    seg2 * (asset_seconds * m2) +
-                    seg3 * (asset_seconds * m3) +
-                    seg4 * (asset_seconds * m4)
+                    seg0 * (asset_seconds * m0)
+                    + seg1 * (asset_seconds * m1)
+                    + seg2 * (asset_seconds * m2)
+                    + seg3 * (asset_seconds * m3)
+                    + seg4 * (asset_seconds * m4)
                 )
                 avg_watch_time = int(total_watch / float(raw_row.video_start))
             else:
                 avg_watch_time = 0
-            
+
             # Create extended performance row
             extended_row = registry.CampaignPerformanceExtended(
                 campaign_id=raw_row.campaign_id,
@@ -330,26 +333,27 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
                 timeout_rate=extended_metrics.timeout_rate,
                 supply_funnel_efficiency=extended_metrics.supply_funnel_efficiency,
             )
-            
+
             s.add(extended_row)
             processed += 1
-        
+
         s.commit()
         return processed
+
 
 # Back-compat shim
 def generate_hourly_performance_ext(campaign_id: int, seed: Optional[int] = None, replace: bool = True) -> int:
     """
     Legacy function that now just adds calculated fields to existing performance data.
-    
+
     This function no longer generates data - it only adds calculated metrics
     to existing performance rows.
-    
+
     Args:
         campaign_id: Campaign identifier
         seed: Ignored (no data generation)
         replace: Ignored (no data generation)
-        
+
     Returns:
         Number of rows processed
     """
@@ -357,7 +361,7 @@ def generate_hourly_performance_ext(campaign_id: int, seed: Optional[int] = None
 
 
 # ===== NETFLIX CORE ADVERTISING METRICS MAPPING =====
-# 
+#
 # This module now focuses on computing derived metrics from existing performance data.
 # The core metrics follow Netflix's definitions and are computed using Pydantic models:
 #
