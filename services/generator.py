@@ -13,7 +13,6 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
 from models.registry import registry, Registry
-from models.enums import CreativeMimeType, TargetingKey, EntityStatusStr
 
 
 def _q2(value: Decimal) -> Decimal:
@@ -49,9 +48,9 @@ def _create_line_item(parent_campaign_id: int, li: registry.LineItemCreate) -> r
 def _map_campaign_status_to_entity(status: object) -> str:
     try:
         value = getattr(status, "value", str(status))
-        return EntityStatusStr.ACTIVE.value if value == "ACTIVE" else EntityStatusStr.INACTIVE.value
+        return registry.EntityStatusStr.ACTIVE.value if value == "ACTIVE" else registry.EntityStatusStr.INACTIVE.value
     except Exception:
-        return EntityStatusStr.INACTIVE.value
+        return registry.EntityStatusStr.INACTIVE.value
 
 
 def create_campaign_payload(data: registry.CampaignCreate) -> tuple[registry.Campaign, registry.Flight, registry.Budget, Optional[registry.FrequencyCap], registry.LineItem, list[registry.CreativeCreate]]:

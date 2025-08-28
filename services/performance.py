@@ -1,20 +1,22 @@
-from __future__ import annotations
-
 """
-Performance generation utilities.
+Basic performance generation utilities - RAW DATA ONLY.
+
+This module generates only raw performance metrics without any calculated fields.
+All derived metrics (rates, percentages) are computed elsewhere using Pydantic models.
 
 Modeled effects (inspired by jafgen):
 - Hour-of-day: Gaussian uplift during 09:00–17:00, peaking at 13:00.
 - Day-of-week: Weekends less busy than weekdays (Fri 0.97, Sat 0.88, Sun 0.92).
 - Flight ramp: Logistic S-curve (~0.85→1.15) with mild weekly undulation.
 - Annual seasonality: Cosine by day-of-year (~0.8→1.0) for gentle yearly swings.
-- Audience mix: Optional synthetic device/age/gender/life_stage/interest split.
 
 Public API
-- generate_hourly_performance(campaign_id, seed=None, replace=True) -> int
+- generate_hourly_performance_raw(campaign_id, seed=None, replace=True) -> int
   Creates one row per hour (UTC boundary) across the campaign flight in
-  `CampaignPerformance`. With a fixed seed, outputs are deterministic.
+  `CampaignPerformance` with ONLY raw data. No calculated fields are generated.
 """
+
+from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import math
@@ -24,8 +26,139 @@ from typing import Iterable
 from sqlalchemy import select, delete
 
 from db_utils import session_scope
-from models.orm import Campaign, Flight, CampaignPerformance
+from models.registry import registry
 import json
+
+
+#!/usr/bin/env python3
+"""
+Create DataFrame with 24 hours of timestamp data
+One row per second for the last 24 hours
+"""
+
+# import pandas as pd
+# from datetime import datetime, timedelta
+
+# """
+# CREATE TABLE timestamp_data (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     unix_timestamp INTEGER NOT NULL,
+#     human_readable TEXT NOT NULL,
+#     hour_of_day INTEGER NOT NULL,
+#     minute_of_hour INTEGER NOT NULL,
+#     second_of_minute INTEGER NOT NULL,
+#     day_of_week INTEGER NOT NULL,
+#     is_business_hour BOOLEAN NOT NULL,
+#     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+# );
+# """
+
+# class TimestampDataGenerator:
+#     """Generate 24 hours of timestamp data as a DataFrame"""
+    
+#     def __init__(self):
+#         self.df = None
+    
+#     def generate_data(self, hours_back=24):
+#         """Generate timestamp data for the specified number of hours back"""
+#         # Calculate start time
+#         now = datetime.now()
+#         start_time = now - timedelta(hours=hours_back)
+        
+#         # Generate timestamps
+#         timestamps = []
+#         current_time = start_time
+        
+#         while current_time <= now:
+#             timestamps.append(current_time)
+#             current_time += timedelta(seconds=1)
+        
+#         # Create DataFrame
+#         self.df = pd.DataFrame({
+#             'unix_timestamp': [int(ts.timestamp()) for ts in timestamps],
+#             'human_readable': [ts.strftime('%Y-%m-%d %H:%M:%S') for ts in timestamps],
+#             'hour_of_day': [ts.hour for ts in timestamps],
+#             'minute_of_hour': [ts.minute for ts in timestamps],
+#             'second_of_minute': [ts.second for ts in timestamps],
+#             'day_of_week': [ts.weekday() for ts in timestamps],  # 0=Monday, 6=Sunday
+#             'is_business_hour': [
+#                 (ts.weekday() < 5 and 9 <= ts.hour < 17)  # Mon-Fri, 9 AM - 5 PM
+#                 for ts in timestamps
+#             ]
+#         })
+        
+#         return self.df
+
+class TimestampDataGenerator:
+    """Generate temporal factors for performance data generation."""
+    
+    def __init__(self):
+        pass
+    
+    def hourly_boost(self, dt: datetime) -> float:
+        """Return a multiplicative uplift factor for the given hour.
+
+        Uses a Gaussian centered at 13:00 with sigma=2.5 between 9:00 and 17:00,
+        yielding a maximum uplift of ~1.5 at the peak and tapering near edges.
+        Outside that window, returns 1.0 (no boost).
+        """
+        hour = dt.hour
+        if 9 <= hour <= 17:
+            mu = 13.0
+            sigma = 2.5
+            x = (hour - mu) / sigma
+            g = math.exp(-0.5 * x * x)
+            return 1.0 + 0.45 * g
+        return 1.0
+    
+    def dow_factor(self, dt: datetime) -> float:
+        """Day-of-week multiplier: weekends slightly less busy than weekdays.
+
+        Mon..Thu ~ 1.00, Fri 0.97, Sat 0.88, Sun 0.92
+        """
+        wd = dt.weekday()  # Mon=0 .. Sun=6
+        if wd == 4:  # Fri
+            return 0.97
+        if wd == 5:  # Sat
+            return 0.88
+        if wd == 6:  # Sun
+            return 0.92
+        return 1.00
+    
+    def ramp_factor(self, start_dt: datetime, current_dt: datetime, end_dt: datetime) -> float:
+        """Smooth ramp over the flight to emulate 'store openings' or audience growth.
+
+        Uses a logistic-like S-curve scaled to ~[0.85, 1.15] across the flight,
+        with slight weekly undulation to mimic weekly cycles.
+        """
+        total_hours = max(1.0, (end_dt - start_dt).total_seconds() / 3600.0)
+        t = min(1.0, max(0.0, (current_dt - start_dt).total_seconds() / 3600.0 / total_hours))
+        # Logistic-ish curve centered at mid-flight
+        x = (t - 0.5) * 6.0
+        s = 1.0 / (1.0 + math.exp(-x))  # 0..1
+        ramp = 0.85 + 0.30 * s          # 0.85..1.15
+        # Mild weekly undulation (period ~168 hours)
+        weekly = 1.0 + 0.03 * math.sin(2.0 * math.pi * (current_dt - start_dt).total_seconds() / (168.0 * 3600.0))
+        return ramp * weekly
+    
+    def annual_factor(self, dt: datetime) -> float:
+        """Annual seasonality factor similar to jafgen's AnnualCurve.
+
+        Cosine over day-of-year scaled to roughly [0.8, 1.0].
+        """
+        # Day of year in [1..366]; use 365 as baseline period
+        yday = dt.timetuple().tm_yday
+        x = 2.0 * math.pi * (yday - 1) / 365.0
+        return (math.cos(x) + 1.0) / 10.0 + 0.8
+    
+    def calculate_temporal_factor(self, start_dt: datetime, current_dt: datetime, end_dt: datetime) -> float:
+        """Calculate combined temporal factor from all components."""
+        hod_factor = self.hourly_boost(current_dt)
+        dow_factor = self.dow_factor(current_dt)
+        ramp_factor = self.ramp_factor(start_dt, current_dt, end_dt)
+        annual_factor = self.annual_factor(current_dt)
+        
+        return hod_factor * dow_factor * ramp_factor * annual_factor
 
 
 def _hours_between(start_dt: datetime, end_dt: datetime) -> Iterable[datetime]:
@@ -41,16 +174,17 @@ def _hours_between(start_dt: datetime, end_dt: datetime) -> Iterable[datetime]:
         current = current + timedelta(hours=1)
 
 
-def generate_hourly_performance(campaign_id: int, seed: int | None = None, replace: bool = True) -> int:
+def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, replace: bool = True) -> int:
     """Generate hourly performance for a campaign across its flight window.
+
+    This function generates ONLY raw data - no calculated fields like CTR, rates, etc.
+    All derived metrics should be computed using Pydantic models elsewhere.
 
     Behavior:
     - Creates one row per hour between flight start and end (inclusive).
     - Stores `hour_ts` as UTC hour boundary.
-    - `completion_rate` is an integer percentage in [0, 100].
-    - `frequency` is an integer in [1, 5].
-    - Impressions and related metrics are boosted using a bell curve during
-      9:00–17:00 hours and a small additional weekend uplift.
+    - Generates raw counts and values only.
+    - Impressions and related metrics are boosted using temporal factors.
 
     Args:
         campaign_id: Target campaign identifier to generate data for.
@@ -61,11 +195,13 @@ def generate_hourly_performance(campaign_id: int, seed: int | None = None, repla
         Count of rows written for this campaign.
     """
     rng = Random(seed)
+    timestamp_generator = TimestampDataGenerator()
+    
     with session_scope() as s:
-        camp = s.execute(select(Campaign).where(Campaign.id == campaign_id)).scalar_one_or_none()
+        camp = s.execute(select(registry.Campaign).where(registry.Campaign.id == campaign_id)).scalar_one_or_none()
         if camp is None:
             return 0
-        flight = s.execute(select(Flight).where(Flight.campaign_id == campaign_id)).scalar_one_or_none()
+        flight = s.execute(select(registry.Flight).where(registry.Flight.campaign_id == campaign_id)).scalar_one_or_none()
         if flight is None:
             return 0
 
@@ -75,76 +211,86 @@ def generate_hourly_performance(campaign_id: int, seed: int | None = None, repla
 
         if replace:
             # Clear any previous synthetic rows for idempotent re-generation.
-            s.execute(delete(CampaignPerformance).where(CampaignPerformance.campaign_id == campaign_id))
+            s.execute(delete(registry.CampaignPerformance).where(registry.CampaignPerformance.campaign_id == campaign_id))
 
         rows = 0
         all_rows = []  # Collect all rows for batch insert
         for hour in _hours_between(start_dt, end_dt):
-            # Seasonality & trends inspired by jafgen:
-            # - Hour-of-day bell curve (prime hours peak)
-            # - Day-of-week factor (weekends a bit less busy)
-            # - Ramp factor over flight (store openings / audience growth)
-            hod_factor = _hourly_boost(hour)             # ~1.0 - 1.5
-            dow_factor = _dow_factor(hour)                # e.g., Sat/Sun < 1.0
-            ramp = _ramp_factor(start_dt, hour, end_dt)   # ~0.85 → 1.15
-            annual = _annual_factor(hour)                 # ~0.8 → 1.0
+            # Calculate temporal factors using the generator
+            factor = timestamp_generator.calculate_temporal_factor(start_dt, hour, end_dt)
 
-            factor = hod_factor * dow_factor * ramp * annual
-
+            # ===== RAW DATA GENERATION ONLY =====
             # Base draws provide variability, then scale by combined factor.
             base_impressions = rng.randint(1000, 10000)
             impressions = int(max(1, base_impressions * factor))
 
-            # Generate clicks with realistic CTR (typically 0.1% to 2%)
+            # Generate raw click count (not CTR)
             base_ctr = rng.uniform(0.001, 0.02)  # 0.1% to 2%
             ctr_variance = rng.uniform(0.8, 1.2)  # ±20% variation
-            ctr = min(0.05, max(0.0001, base_ctr * ctr_variance * factor))  # Cap at 5%
-            clicks = max(0, int(impressions * ctr))
+            raw_ctr = min(0.05, max(0.0001, base_ctr * ctr_variance * factor))  # Cap at 5%
+            clicks = max(0, int(impressions * raw_ctr))
 
+            # Generate raw completion count (not rate)
             base_completion = rng.randint(70, 98)
             completion_bump = int(4 * min(1.0, max(0.0, factor - 1.0)))
-            completion_rate = min(98, base_completion + completion_bump)
+            completion_count = min(98, base_completion + completion_bump)
 
-            # Generate render rate (typically 95-99%)
+            # Generate raw render count (not rate)
             base_render = rng.uniform(0.95, 0.99)
-            render_rate = min(0.999, max(0.90, base_render * factor))
+            render_factor = min(0.999, max(0.90, base_render * factor))
+            render_count = int(impressions * render_factor)
 
-            # Generate fill rate (typically 85-98%)
+            # Generate raw fill count (not rate)
             base_fill = rng.uniform(0.85, 0.98)
-            fill_rate = min(0.999, max(0.80, base_fill * factor))
+            fill_factor = min(0.999, max(0.80, base_fill * factor))
+            fill_count = int(impressions * fill_factor)
 
-            # Generate response rate (typically 1-5% for interactive ads)
+            # Generate raw response count (not rate)
             base_response = rng.uniform(0.01, 0.05)
-            response_rate = min(0.10, max(0.001, base_response * factor))
+            response_factor = min(0.10, max(0.001, base_response * factor))
+            response_count = int(impressions * response_factor)
 
-            # Generate video skip rate (typically 10-40%)
+            # Generate raw video skip count (not rate)
             base_skip = rng.uniform(0.10, 0.40)
-            skip_rate = min(0.60, max(0.05, base_skip * (2.0 - factor)))  # Better performance = lower skip rate
+            skip_factor = min(0.60, max(0.05, base_skip * (2.0 - factor)))  # Better performance = lower skip rate
+            skips = int(impressions * skip_factor)
 
-            # Generate video start count (typically 80-95% of impressions for video ads)
+            # Generate raw video start count (not rate)
             base_start_rate = rng.uniform(0.80, 0.95)
-            start_rate = min(0.99, max(0.70, base_start_rate * factor))
-            video_start = max(0, int(impressions * start_rate))
+            start_factor = min(0.99, max(0.70, base_start_rate * factor))
+            video_start = max(0, int(impressions * start_factor))
 
+            # Generate raw frequency and reach
             base_frequency = rng.randint(1, 4)
             frequency = max(1, min(5, int(round(base_frequency * (1.0 + 0.15 * max(0.0, factor - 1.0))))))
             reach = max(1, impressions // max(1, frequency))
 
-            perf = CampaignPerformance(
+            # Create performance row with RAW DATA ONLY
+            perf = registry.CampaignPerformance(
                 campaign_id=campaign_id,
                 hour_ts=hour,
+                # Raw counts only - no calculated fields
                 impressions=impressions,
                 clicks=clicks,
-                ctr=ctr,
-                completion_rate=completion_rate,
-                render_rate=render_rate,
-                fill_rate=fill_rate,
-                response_rate=response_rate,
-                video_skip_rate=skip_rate,
+                # Calculate and store actual rates (not raw counts)
+                ctr=raw_ctr,  # This is already a rate (0.0-0.05)
+                completion_rate=completion_count,  # This is a percentage (0-100)
+                render_rate=render_factor,  # This is already a rate (0.0-1.0)
+                fill_rate=fill_factor,      # This is already a rate (0.0-1.0)
+                response_rate=response_factor,  # This is already a rate (0.0-1.0)
+                video_skip_rate=skip_factor,    # This is already a rate (0.0-1.0)
                 video_start=video_start,
                 frequency=frequency,
                 reach=reach,
+                # Temporal breakdown fields
+                human_readable=hour.strftime("%Y-%m-%d %H:%M:%S %Z"),
+                hour_of_day=hour.hour,
+                minute_of_hour=hour.minute,
+                second_of_minute=hour.second,
+                day_of_week=hour.weekday(),  # Monday=0, Sunday=6
+                is_business_hour=1 if 9 <= hour.hour <= 17 and hour.weekday() < 5 else 0,
             )
+            
             # Optional: enrich with audience composition reflecting simple preferences
             perf.audience_json = json.dumps(_audience_mix(rng, hour, impressions))
             all_rows.append(perf)  # Collect instead of immediate add
@@ -155,66 +301,6 @@ def generate_hourly_performance(campaign_id: int, seed: int | None = None, repla
         s.flush()
         
         return rows
-
-
-def _hourly_boost(dt: datetime) -> float:
-    """Return a multiplicative uplift factor for the given hour.
-
-    Uses a Gaussian centered at 13:00 with sigma=2.5 between 9:00 and 17:00,
-    yielding a maximum uplift of ~1.5 at the peak and tapering near edges.
-    Outside that window, returns 1.0 (no boost).
-    """
-    hour = dt.hour
-    if 9 <= hour <= 17:
-        mu = 13.0
-        sigma = 2.5
-        x = (hour - mu) / sigma
-        g = math.exp(-0.5 * x * x)
-        return 1.0 + 0.45 * g
-    return 1.0
-
-
-def _dow_factor(dt: datetime) -> float:
-    """Day-of-week multiplier: weekends slightly less busy than weekdays.
-
-    Mon..Thu ~ 1.00, Fri 0.97, Sat 0.88, Sun 0.92
-    """
-    wd = dt.weekday()  # Mon=0 .. Sun=6
-    if wd == 4:  # Fri
-        return 0.97
-    if wd == 5:  # Sat
-        return 0.88
-    if wd == 6:  # Sun
-        return 0.92
-    return 1.00
-
-
-def _ramp_factor(start_dt: datetime, current_dt: datetime, end_dt: datetime) -> float:
-    """Smooth ramp over the flight to emulate 'store openings' or audience growth.
-
-    Uses a logistic-like S-curve scaled to ~[0.85, 1.15] across the flight,
-    with slight weekly undulation to mimic weekly cycles.
-    """
-    total_hours = max(1.0, (end_dt - start_dt).total_seconds() / 3600.0)
-    t = min(1.0, max(0.0, (current_dt - start_dt).total_seconds() / 3600.0 / total_hours))
-    # Logistic-ish curve centered at mid-flight
-    x = (t - 0.5) * 6.0
-    s = 1.0 / (1.0 + math.exp(-x))  # 0..1
-    ramp = 0.85 + 0.30 * s          # 0.85..1.15
-    # Mild weekly undulation (period ~168 hours)
-    weekly = 1.0 + 0.03 * math.sin(2.0 * math.pi * (current_dt - start_dt).total_seconds() / (168.0 * 3600.0))
-    return ramp * weekly
-
-
-def _annual_factor(dt: datetime) -> float:
-    """Annual seasonality factor similar to jafgen's AnnualCurve.
-
-    Cosine over day-of-year scaled to roughly [0.8, 1.0].
-    """
-    # Day of year in [1..366]; use 365 as baseline period
-    yday = dt.timetuple().tm_yday
-    x = 2.0 * math.pi * (yday - 1) / 365.0
-    return (math.cos(x) + 1.0) / 10.0 + 0.8
 
 
 def _audience_mix(rng: Random, dt: datetime, impressions: int) -> dict:
@@ -257,3 +343,9 @@ def _audience_mix(rng: Random, dt: datetime, impressions: int) -> dict:
         "life_stage": life_stage,
         "interest": interest,
     }
+
+
+# Legacy function name for backward compatibility
+def generate_hourly_performance(campaign_id: int, seed: int | None = None, replace: bool = True) -> int:
+    """Legacy function that calls the new raw data generator."""
+    return generate_hourly_performance_raw(campaign_id, seed, replace)

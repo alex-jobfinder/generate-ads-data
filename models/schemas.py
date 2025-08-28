@@ -8,12 +8,12 @@ Recommended improvements:
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 import os
 from decimal import Decimal
 from typing import Optional, Literal, List, Dict, Any
 
-from pydantic import BaseModel, EmailStr, Field, conint
+from pydantic import BaseModel, EmailStr, Field, conint, ConfigDict
 
 from .enums import (
     Objective,
@@ -199,4 +199,116 @@ class CampaignCreate(BaseModel):
     line_items: List[LineItemCreate]
 
 Targeting.model_rebuild()
+
+
+# ===== Performance Data Schemas =====
+
+class PerformanceMetricsBase(BaseModel):
+    """Base schema for performance metrics with raw data only."""
+    
+    campaign_id: int
+    hour_ts: datetime
+    impressions: int = Field(ge=0, description="Total ad impressions served")
+    clicks: int = Field(ge=0, description="Total click-through interactions")
+    ctr: float = Field(ge=0.0, le=1.0, description="Click-through rate (0.0-1.0)")
+    completion_rate: int = Field(ge=0, le=100, description="Video completion rate as percentage (0-100)")
+    render_rate: float = Field(ge=0.0, le=1.0, description="Render rate (0.0-1.0)")
+    fill_rate: float = Field(ge=0.0, le=1.0, description="Fill rate (0.0-1.0)")
+    response_rate: float = Field(ge=0.0, le=1.0, description="Response rate (0.0-1.0)")
+    video_skip_rate: float = Field(ge=0.0, le=1.0, description="Video skip rate (0.0-1.0)")
+    video_start: int = Field(ge=0, description="Video start count")
+    frequency: int = Field(ge=1, description="Average frequency per user")
+    reach: int = Field(ge=0, description="Unique users reached")
+    audience_json: Optional[str] = Field(None, description="Audience composition JSON")
+    
+    # Temporal breakdown fields
+    human_readable: str = Field(description="Human-readable timestamp string")
+    hour_of_day: int = Field(ge=0, le=23, description="Hour of day (0-23)")
+    minute_of_hour: int = Field(ge=0, le=59, description="Minute of hour (0-59)")
+    second_of_minute: int = Field(ge=0, le=59, description="Second of minute (0-59)")
+    day_of_week: int = Field(ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
+    is_business_hour: bool = Field(description="Whether this is during business hours")
+    
+    model_config = {"arbitrary_types_allowed": True}
+
+
+class PerformanceMetricsCreate(PerformanceMetricsBase):
+    """Schema for creating new performance metrics."""
+    pass
+
+
+class PerformanceMetricsRead(PerformanceMetricsBase):
+    """Schema for reading performance metrics."""
+    id: int
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExtendedPerformanceMetricsBase(BaseModel):
+    """Base schema for extended performance metrics with raw data only."""
+    
+    campaign_id: int
+    hour_ts: datetime
+    
+    # Supply funnel
+    requests: int = Field(ge=0, description="Total ad requests made")
+    responses: int = Field(ge=0, description="Total responses received")
+    eligible_impressions: int = Field(ge=0, description="Impressions eligible after targeting")
+    auctions_won: int = Field(ge=0, description="Auctions won")
+    impressions: int = Field(ge=0, description="Total ad impressions served")
+    
+    # Quality metrics
+    viewable_impressions: int = Field(ge=0, description="Viewable impressions")
+    audible_impressions: int = Field(ge=0, description="Audible impressions")
+    
+    # Video metrics
+    video_starts: int = Field(ge=0, description="Video ads that began playing")
+    video_q25: int = Field(ge=0, description="Video ads that reached 25% completion")
+    video_q50: int = Field(ge=0, description="Video ads that reached 50% completion")
+    video_q75: int = Field(ge=0, description="Video ads that reached 75% completion")
+    video_q100: int = Field(ge=0, description="Video ads that reached 100% completion")
+    skips: int = Field(ge=0, description="Video ads that were skipped")
+    avg_watch_time_seconds: int = Field(ge=0, le=3600, description="Average watch time in seconds")
+    
+    # Interaction metrics
+    clicks: int = Field(ge=0, description="Total click-through interactions")
+    qr_scans: int = Field(ge=0, description="QR code scans")
+    interactive_engagements: int = Field(ge=0, description="Interactive engagements")
+    
+    # Audience metrics
+    reach: int = Field(ge=0, description="Unique users reached")
+    frequency: int = Field(ge=1, le=10, description="Average frequency per user")
+    
+    # Spend metrics
+    spend: int = Field(ge=0, description="Total spend in cents")
+    effective_cpm: int = Field(ge=0, description="Effective CPM in cents")
+    
+    # Reliability metrics
+    error_count: int = Field(ge=0, description="Error count")
+    timeout_count: int = Field(ge=0, description="Timeout count")
+    
+    # Optional metadata
+    comment: Optional[str] = Field(None, description="Additional notes or metadata")
+    
+    # Temporal breakdown fields
+    human_readable: str = Field(description="Human-readable timestamp string")
+    hour_of_day: int = Field(ge=0, le=23, description="Hour of day (0-23)")
+    minute_of_hour: int = Field(ge=0, le=59, description="Minute of hour (0-59)")
+    second_of_minute: int = Field(ge=0, le=59, description="Second of minute (0-59)")
+    day_of_week: int = Field(ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
+    is_business_hour: bool = Field(description="Whether this is during business hours")
+    
+    model_config = {"arbitrary_types_allowed": True}
+
+
+class ExtendedPerformanceMetricsCreate(ExtendedPerformanceMetricsBase):
+    """Schema for creating new extended performance metrics."""
+    pass
+
+
+class ExtendedPerformanceMetricsRead(ExtendedPerformanceMetricsBase):
+    """Schema for reading extended performance metrics."""
+    id: int
+    
+    model_config = ConfigDict(from_attributes=True)
 

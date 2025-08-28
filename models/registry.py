@@ -304,12 +304,20 @@ class Registry:
         return self.enums.EntityStatus
     
     @property
+    def EntityStatusStr(self):
+        return self.enums.EntityStatusStr
+    
+    @property
     def Objective(self):
         return self.enums.Objective
     
     @property
     def QAStatus(self):
         return self.enums.QAStatus
+    
+    @property
+    def AdFormat(self):
+        return self.enums.AdFormat
     
     # Default constants
     @property

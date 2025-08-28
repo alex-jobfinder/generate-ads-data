@@ -68,21 +68,6 @@ engine = create_engine(DB_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
-# def init_db() -> None:
-#     with engine.connect() as conn:
-#         if DB_URL.startswith("sqlite"):
-#             conn.execute(text("PRAGMA foreign_keys=ON"))
-#             conn.execute(text("PRAGMA journal_mode=WAL"))
-#     # Drop and recreate schemas for both primary models and test models
-#     Base.metadata.drop_all(bind=engine)
-#     # TestBase.metadata.drop_all(bind=engine)
-#     Base.metadata.create_all(bind=engine)
-#     # TestBase.metadata.create_all(bind=engine)
-
-
-
-
-
 def init_db() -> None:
     with engine.connect() as conn:
         if DB_URL.startswith("sqlite"):
@@ -352,28 +337,6 @@ def persist_campaign(advertiser_id: int | None, payload: any, return_ids: bool =
         return result
 
 
-# def process_from_yaml(path: str, log_level: str | None = None, db_url: str | None = None, 
-#                      seed: int | None = None, generate_performance: bool = False) -> None:
-#     """Process YAML config file to create entities."""
-#     setup_env(log_level, db_url, seed)
-#     config = safe_load_yaml(path)
-    
-#     # Process advertisers
-#     for adv_config in config.get("advertisers", []):
-#         from models.advertiser import AdvertiserCreate
-#         payload = AdvertiserCreate(**adv_config)
-#         adv_id = persist_advertiser(payload)
-        
-#         # Process campaigns for this advertiser
-#         for camp_config in adv_config.get("campaigns", []):
-#             from models.registry import registry
-#             camp_payload = CampaignCreate(**camp_config)
-#             result = persist_campaign(adv_id, camp_payload, return_ids=True)
-            
-#             if generate_performance and "campaign_id" in result:
-#                 generate_hourly_performance(result["campaign_id"], seed=seed, replace=True)
-
-
 def generate_hourly_performance(campaign_id: int, seed: int | None = None, replace: bool = True) -> int:
     """Generate synthetic hourly performance rows for a campaign."""
     from services.performance import generate_hourly_performance as _generate_hourly_performance
@@ -384,107 +347,3 @@ def generate_performance(campaign_id: int, seed: int | None = None, replace: boo
     """Generate synthetic hourly performance rows for a campaign and return summary."""
     rows = generate_hourly_performance(campaign_id, seed=seed, replace=replace)
     return {"campaign_id": campaign_id, "rows": rows}
-
-
-"""
-CREATE TABLE advertisers (
-	id INTEGER NOT NULL, 
-	name VARCHAR(255) NOT NULL, 
-	status VARCHAR(8) DEFAULT 'ACTIVE' NOT NULL CHECK (status IN ('ACTIVE','INACTIVE','DELETED')), 
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	brand VARCHAR(255), 
-	contact_email VARCHAR(255) NOT NULL, 
-	agency_name VARCHAR(255), 
-	PRIMARY KEY (id), 
-	UNIQUE (contact_email)
-);
-
-CREATE TABLE campaigns (
-	id INTEGER NOT NULL, 
-	name VARCHAR(255) NOT NULL, 
-	status VARCHAR(8) DEFAULT 'ACTIVE' NOT NULL CHECK (status IN ('ACTIVE','INACTIVE','DELETED')), 
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	advertiser_id INTEGER NOT NULL, 
-	objective VARCHAR(13) NOT NULL CHECK (objective IN ('AWARENESS','CONSIDERATION','CONVERSION')), 
-	currency VARCHAR(3) DEFAULT 'USD' NOT NULL CHECK (currency IN ('USD')), 
-	target_cpm INTEGER NOT NULL, 
-	dsp_partner VARCHAR(14) NOT NULL CHECK (dsp_partner IN ('DV360','GOOGLE_DV360','THE_TRADE_DESK','MAGNITE','MICROSOFT')), 
-	programmatic_buy_type VARCHAR(23) CHECK (programmatic_buy_type IN ('DIRECT_GUARANTEED','PROGRAMMATIC_GUARANTEED','PROGRAMMATIC_PREFERRED','PRIVATE_MARKETPLACE')), 
-	programmatic_partner VARCHAR(14) CHECK (programmatic_partner IN ('DV360','GOOGLE_DV360','THE_TRADE_DESK','MAGNITE','MICROSOFT')), 
-	content_adjacency_tier VARCHAR(6) CHECK (content_adjacency_tier IN ('TIER_1','TIER_2','TIER_3')), 
-	brand_lift_enabled INTEGER, 
-	attention_metrics_enabled INTEGER, 
-	clean_room_provider VARCHAR(9) CHECK (clean_room_provider IN ('SNOWFLAKE','INFOSUM','LIVERAMP')), 
-	measurement_partner VARCHAR(18) CHECK (measurement_partner IN ('NIELSEN','KANTAR','LUCID','NCSOLUTIONS','AFFINITY_SOLUTIONS','EDO')), 
-	external_ref VARCHAR(64), 
-	PRIMARY KEY (id), 
-	CONSTRAINT ck_campaign_brand_lift_bool CHECK (brand_lift_enabled IN (0,1) OR brand_lift_enabled IS NULL), 
-	CONSTRAINT ck_campaign_attention_bool CHECK (attention_metrics_enabled IN (0,1) OR attention_metrics_enabled IS NULL), 
-	FOREIGN KEY(advertiser_id) REFERENCES advertisers (id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE line_items (
-	id INTEGER NOT NULL, 
-	name VARCHAR(255) NOT NULL, 
-	status VARCHAR(8) DEFAULT 'ACTIVE' NOT NULL CHECK (status IN ('ACTIVE','INACTIVE','DELETED')), 
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	campaign_id INTEGER NOT NULL, 
-	ad_format VARCHAR(19) NOT NULL CHECK (ad_format IN ('STANDARD_VIDEO','INTERACTIVE_OVERLAY','PAUSE_ADS','BINGE_ADS','SPONSORSHIP')), 
-	bid_cpm INTEGER NOT NULL, 
-	pacing_pct INTEGER NOT NULL, 
-	targeting_json TEXT NOT NULL, 
-	device_targets_json TEXT, 
-	duration_seconds INTEGER, 
-	ad_server_type VARCHAR(8) CHECK (ad_server_type IN ('VAST_TAG','DSP_TAG')), 
-	pixel_vendor VARCHAR(12) CHECK (pixel_vendor IN ('IAS','DOUBLEVERIFY')), 
-	geo_tier VARCHAR(7) CHECK (geo_tier IN ('COUNTRY','REGION','DMA','CITY')), 
-	PRIMARY KEY (id), 
-	FOREIGN KEY(campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-
-CREATE TABLE creatives (
-	id INTEGER NOT NULL, 
-	name VARCHAR(255), 
-	status VARCHAR(8) DEFAULT 'ACTIVE' NOT NULL CHECK (status IN ('ACTIVE','INACTIVE','DELETED')), 
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-	line_item_id INTEGER NOT NULL, 
-	asset_url TEXT NOT NULL, 
-	checksum VARCHAR(64), 
-	mime_type VARCHAR(15) NOT NULL CHECK (mime_type IN ('VIDEO/MP4','VIDEO/QUICKTIME')), 
-	duration_seconds INTEGER NOT NULL, 
-	qa_status VARCHAR(8) CHECK (qa_status IN ('PENDING','APPROVED','REJECTED')), 
-	placement VARCHAR(8) CHECK (placement IN ('PRE_ROLL','MID_ROLL','LIVE')), 
-	file_format VARCHAR(3) CHECK (file_format IN ('MP4','MOV')), 
-	width INTEGER, 
-	height INTEGER, 
-	frame_rate VARCHAR(6) CHECK (frame_rate IN ('23_976','24','25','29_97','30')), 
-	frame_rate_mode VARCHAR(8) CHECK (frame_rate_mode IN ('CONSTANT')), 
-	aspect_ratio VARCHAR(5) CHECK (aspect_ratio IN ('R16_9')), 
-	scan_type VARCHAR(11) CHECK (scan_type IN ('PROGRESSIVE')), 
-	video_codec_h264_profile VARCHAR(8) CHECK (video_codec_h264_profile IN ('BASELINE','MAIN','HIGH')), 
-	video_codec_prores_profile VARCHAR(13) CHECK (video_codec_prores_profile IN ('PRORES_422_HQ','PRORES_422','PRORES_422_LT')), 
-	chroma_subsampling VARCHAR(9) CHECK (chroma_subsampling IN ('YUV_4_2_2','YUV_4_2_0')), 
-	color_primaries VARCHAR(6) CHECK (color_primaries IN ('BT_709')), 
-	transfer_function VARCHAR(6) CHECK (transfer_function IN ('BT_709')), 
-	bitrate_kbps INTEGER, 
-	file_size_bytes INTEGER, 
-	audio_codec VARCHAR(6) CHECK (audio_codec IN ('PCM','AAC_LC')), 
-	audio_channels VARCHAR(12) CHECK (audio_channels IN ('STEREO','SURROUND_5_1')), 
-	audio_sample_rate_hz INTEGER, 
-	audio_bit_depth INTEGER, 
-	safe_zone_ok INTEGER, 
-	is_interactive INTEGER, 
-	interactive_meta_json TEXT, 
-	is_pause_ad INTEGER, 
-	qr_code_url TEXT, 
-	overlay_cta_text VARCHAR(64), 
-	PRIMARY KEY (id), 
-	FOREIGN KEY(line_item_id) REFERENCES line_items (id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-"""

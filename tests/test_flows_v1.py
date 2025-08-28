@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from db_utils import session_scope
 from models.registry import registry
-from models.enums import CreativeMimeType, TargetingKey
+
 from services.generator import create_advertiser_payload, create_campaign_payload
 from services.validators import validate_campaign_v1
 
@@ -31,8 +31,8 @@ def test_create_advertiser_and_campaign_v1() -> None:
                 ad_format="STANDARD_VIDEO",
                 bid_cpm=Decimal("35.00"),
                 pacing_pct=100,
-                targeting={TargetingKey.DEVICE.value: ["TV"]},
-                creatives=[registry.CreativeCreate(asset_url="https://example.com/ad.mp4", mime_type=CreativeMimeType.mp4, duration_seconds=15)],
+                targeting={registry.TargetingKey.DEVICE.value: ["TV"]},
+                creatives=[registry.CreativeCreate(asset_url="https://example.com/ad.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15)],
             )
         ],
     )

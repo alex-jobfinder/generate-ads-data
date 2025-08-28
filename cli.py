@@ -22,7 +22,7 @@ from db_utils import (
     get_logger, setup_env, init_db, migrate_db, build_auto_campaign, 
     persist_campaign, generate_performance, generate_hourly_performance
 )
-from models.schemas import AdvertiserCreate
+from models.registry import registry
 from factories.faker_providers import (
     fake_advertiser,
     ProfileName,
@@ -76,7 +76,7 @@ def cmd_create_advertiser(name: Optional[str], email: Optional[str], brand: Opti
         email = email or e
         brand = brand or b
         agency = agency or a
-    payload = AdvertiserCreate(name=name or "", contact_email=email or "", brand=brand, agency_name=agency)
+    payload = registry.AdvertiserCreate(name=name or "", contact_email=email or "", brand=brand, agency_name=agency)
     adv = create_advertiser_payload(payload)
     from db_utils import session_scope
     with session_scope() as s:
@@ -105,48 +105,6 @@ def cmd_create_campaign(advertiser_id: Optional[int], auto: bool, profile: Optio
         if cid is not None:
             _ = generate_hourly_performance(int(cid), seed=seed, replace=True)
 
-
-# @cli.command("create-from-config")
-# @click.option("--path", required=False, default="config.yml", show_default=True, type=str, help="Path to YAML config")
-# @click.option("--log-level", type=str, required=False)
-# @click.option("--db-url", type=str, required=False)
-# @click.option("--seed", type=int, required=False)
-# @click.option("--generate-performance/--no-generate-performance", default=False, show_default=True)
-# @click.option("--seed-5x5", is_flag=True, default=False, help="After config, seed 5 advertisers with 5 campaigns each")
-# @click.option("--performance-type", type=click.Choice(["normal", "extended", "both"]), default="normal", help="Type of performance data to generate")
-# def cmd_create_from_config(path: str = "config.yml", log_level: Optional[str] = None, db_url: Optional[str] = None, seed: Optional[int] = None, generate_performance: bool = False, seed_5x5: bool = False, performance_type: str = "normal") -> None:
-#     """Create entities from a YAML config; optional 5x5 seeding and batch performance generation."""
-#     process_from_yaml(path, log_level, db_url, seed, generate_performance=generate_performance)
-    
-#     if seed_5x5:
-#         print("Seeding 5x5 advertisers and campaigns...")
-#         for i in range(1, 6):
-#             # Create advertiser
-#             adv_result = json.loads(subprocess.run([sys.executable, "cli.py", "create-advertiser", "--auto"], capture_output=True, text=True, check=True).stdout)
-#             adv_id = adv_result["advertiser_id"]
-#             print(f"Created Advertiser {i} => ID={adv_id}")
-            
-#             # Create 5 campaigns for this advertiser
-#             for j in range(1, 6):
-#                 campaign_result = json.loads(subprocess.run([sys.executable, "cli.py", "create-campaign", "--advertiser-id", str(adv_id), "--auto"], capture_output=True, text=True, check=True).stdout)
-#                 campaign_id = campaign_result["campaign_id"]
-#                 print(f"  Created Campaign {j} => ID={campaign_id}")
-                
-#                 # Generate performance data based on type
-#                 if generate_performance:
-#                     if performance_type in ["normal", "both"]:
-#                         from services.performance import generate_hourly_performance
-#                         rows = generate_hourly_performance(int(campaign_id), seed=seed, replace=True)
-#                         print(f"    Generated {rows} normal performance rows")
-                    
-#                     if performance_type in ["extended", "both"]:
-#                         from services.performance_ext import generate_hourly_performance_ext
-#                         rows = generate_hourly_performance_ext(int(campaign_id), seed=seed, replace=True)
-#                         print(f"    Generated {rows} extended performance rows")
-            
-#             print("---")
-        
-#         print("5x5 seeding completed!")
 
 
 @cli.command("generate-performance")

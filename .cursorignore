@@ -23,3 +23,5 @@ Thumbs.db
 
 ignore/*
 cli_templates_IGNORE/*
+
+.pytest_cache/*

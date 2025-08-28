@@ -34,3 +34,4 @@ Thumbs.db
 ignore/*
 
 ads.db*
+.pytest_cache/*

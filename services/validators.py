@@ -12,19 +12,18 @@ from typing import Iterable
 
 from pydantic import ValidationError
 
-from models.schemas import CampaignCreate
-from models.enums import PricingDefaults
+from models.registry import registry
 
 
-def validate_campaign_v1(payload: CampaignCreate) -> None:
+def validate_campaign_v1(payload: registry.CampaignCreate) -> None:
     if len(payload.line_items) != 1:
         raise ValueError("v1 requires exactly 1 line item")
 
     if payload.flight.end_date < payload.flight.start_date:
         raise ValueError("end_date must be >= start_date")
 
-    min_cpm = PricingDefaults.DEFAULT_CPM_MIN
-    max_cpm = PricingDefaults.DEFAULT_CPM_MAX
+    min_cpm = registry.PricingDefaults.DEFAULT_CPM_MIN
+    max_cpm = registry.PricingDefaults.DEFAULT_CPM_MAX
     if not (Decimal(min_cpm) <= payload.target_cpm <= Decimal(max_cpm)):
         raise ValueError(f"target_cpm must be between {min_cpm} and {max_cpm}")
 
