@@ -18,27 +18,6 @@ A comprehensive, production-ready platform for generating realistic Netflix ads 
 
 ## 🏗️ **Architecture Overview**
 
-### **Database Schema & Relationships**
-
-The platform creates a comprehensive database schema with realistic Netflix ads data. Here's the Entity Relationship Diagram (ERD) showing how all tables connect:
-
-![Database Entity Relationship Diagram showing table relationships](ads_db__erd_sqlite_cursor.JPG)
-
-**Key Relationships:**
-- **Advertisers** → **Campaigns** (one-to-many)
-- **Campaigns** → **Line Items** (one-to-many) 
-- **Campaigns** → **Creatives** (one-to-many)
-- **Campaigns** → **Performance** (one-to-many)
-- **Campaigns** → **Performance Extended** (one-to-many)
-
-**Table Structure:**
-- **`advertisers`**: Company information, industry, brand details
-- **`campaigns`**: Campaign objectives, budgets, targeting, status
-- **`line_items`**: Ad formats, placements, delivery settings, targeting JSON
-- **`creatives`**: Video specs, interactive elements, QA status, file properties
-- **`performance`**: Hourly metrics (impressions, clicks, spend, CTR, CPM)
-- **`performance_ext`**: Extended metrics (viewability, completion rates, supply funnel)
-
 ### **Registry Pattern (`models/registry.py`)**
 The heart of the system - a centralized registry that provides unified access to:
 - **ORM Models** - SQLAlchemy database models
@@ -202,6 +181,40 @@ FROM campaigns c
 JOIN performance p ON c.id = p.campaign_id 
 GROUP BY c.id;
 ```
+
+## 🗄️ **Database Schema & Relationships**
+
+Now that you've generated data, let's understand the database structure. The platform creates a comprehensive schema with realistic Netflix ads data:
+
+![Database Entity Relationship Diagram showing table relationships](ads_db__erd_sqlite_cursor.JPG)
+
+**Key Relationships:**
+- **Advertisers** → **Campaigns** (one-to-many)
+- **Campaigns** → **Line Items** (one-to-many) 
+- **Campaigns** → **Creatives** (one-to-many)
+- **Campaigns** → **Performance** (one-to-many)
+- **Campaigns** → **Performance Extended** (one-to-many)
+
+**Table Structure:**
+- **`advertisers`**: Company information, industry, brand details
+- **`campaigns`**: Campaign objectives, budgets, targeting, status
+- **`line_items`**: Ad formats, placements, delivery settings, targeting JSON
+- **`creatives`**: Video specs, interactive elements, QA status, file properties
+- **`performance`**: Hourly metrics (impressions, clicks, spend, CTR, CPM)
+- **`performance_ext`**: Extended metrics (viewability, completion rates, supply funnel)
+
+**Understanding the Data Flow:**
+1. **Advertisers** create campaigns with specific objectives and budgets
+2. **Campaigns** contain line items that define ad formats and targeting
+3. **Creatives** provide the actual ad content and specifications
+4. **Performance** tracks hourly metrics and engagement data
+5. **Performance Extended** adds business intelligence and derived metrics
+
+This structure allows you to analyze campaigns from multiple angles:
+- **Campaign Performance**: How campaigns perform over time
+- **Industry Analysis**: Compare performance across different advertiser industries
+- **Format Effectiveness**: Analyze which ad formats drive better results
+- **Targeting Insights**: Understand audience engagement patterns
 
 ## 🎯 **Registry Pattern Benefits**
 
