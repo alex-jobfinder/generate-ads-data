@@ -1,6 +1,6 @@
 # 🚀 Netflix Ads Data Generation Platform
 
-A comprehensive, production-ready platform for generating realistic Netflix ads data using modern Python technologies. Built with a centralized registry pattern for maintainability and extensibility.
+A comprehensive, production-ready platform for generating realistic Netflix ads data using modern Python technologies. Built with a centralized registry pattern for maintainability and extensibility, featuring an efficient performance generation system with zero code duplication.
 
 ## ✨ **Key Features**
 
@@ -10,6 +10,8 @@ A comprehensive, production-ready platform for generating realistic Netflix ads 
 - **🔧 CLI-Driven Workflows** - Easy-to-use commands for data generation and management
 - **🧪 Comprehensive Testing** - 18 tests covering all major functionality
 - **📈 Performance Simulation** - Hourly performance data with realistic metrics
+- **♻️ Zero Code Duplication** - Efficient performance generation with shared utilities
+- **🧮 Smart Calculation** - Pydantic computed fields for derived metrics
 
 ## 🏗️ **Architecture Overview**
 
@@ -30,6 +32,30 @@ mime_type = registry.CreativeMimeType.mp4
 budget_type = registry.BudgetType.lifetime
 ```
 
+### **Performance Generation Architecture**
+The system uses a smart two-layer approach to eliminate code duplication:
+
+#### **Layer 1: Raw Data Generation (`services/performance.py`)**
+- Generates ALL performance data (basic + extended) in one place
+- Includes temporal factors, supply funnel metrics, and quality indicators
+- Single source of truth for all raw performance data
+- Uses shared utilities for common operations
+
+#### **Layer 2: Calculated Fields (`services/performance_ext.py`)**
+- **NO data generation** - reads existing performance data
+- Adds business intelligence through Pydantic computed fields
+- Computes derived metrics like CTR, completion rates, viewability
+- Enriches existing data without duplication
+
+#### **Shared Utilities (`services/performance_utils.py`)**
+```python
+# Common functions used by both performance modules:
+- get_campaign_and_flight()      # Campaign/flight data fetching
+- clear_existing_performance()   # Data clearing
+- batch_insert_performance()     # Batch insertion
+- create_performance_row()       # Row creation with temporal fields
+```
+
 ### **Core Components**
 - **`models/orm.py`** - SQLAlchemy ORM models with constraints and relationships
 - **`models/schemas.py`** - Pydantic v2 schemas for data validation
@@ -43,16 +69,17 @@ budget_type = registry.BudgetType.lifetime
 ```
 generate-ads-data/
 ├── models/                     # Core domain models
-│   ├── registry.py            # 🎯 Centralized registry (NEW!)
-│   ├── orm.py                 # SQLAlchemy ORM models
+│   ├── registry.py            # 🎯 Centralized registry
+│   ├── orm.py                 # SQLAlchemy ORM models with extended fields
 │   ├── schemas.py             # Pydantic validation schemas
 │   ├── enums.py               # Domain enums and constants
 │   └── __init__.py            # Registry-only exports
 ├── services/                   # Business logic
 │   ├── streamlined_processor.py # Main data generation service
 │   ├── generator.py           # ORM payload creation
-│   ├── performance.py         # Performance data generation
-│   ├── performance_ext.py     # Extended performance metrics
+│   ├── performance.py         # 🚀 Complete performance data generation
+│   ├── performance_ext.py     # 📊 Calculated fields only (no duplication)
+│   ├── performance_utils.py   # 🔧 Shared utilities for performance
 │   └── validators.py          # Cross-field validation
 ├── factories/                  # Data generation
 │   └── faker_providers.py     # Faker providers using registry
@@ -94,7 +121,7 @@ make init-db
 # This creates:
 # ✅ 3 Complete Examples (Luxury Auto, Crunchy Snacks, NexBank)
 # ✅ 4 Campaign Profiles (High CPM, Mobile, Interactive, Multi-device)
-# ✅ Performance data for all campaigns
+# ✅ Complete performance data for all campaigns (basic + extended)
 # ✅ ~12MB SQLite database with realistic Netflix ads data
 ```
 
@@ -144,7 +171,33 @@ registry.Advertiser(...)
 - **📈 Future-Proof** - Easy to add new properties or change implementations
 - **🧪 Better Testing** - Centralized access makes mocking and testing easier
 
-## 📊 **Data Generation Capabilities**
+## 📊 **Performance Data Generation**
+
+### **Smart Architecture - Zero Duplication**
+
+#### **Single Data Generation Point**
+```python
+# All performance data generated in one place
+from services.performance import generate_hourly_performance_raw
+
+# This generates:
+# ✅ Basic metrics: impressions, clicks, CTR, completion rates
+# ✅ Extended metrics: supply funnel, video progression, quality metrics
+# ✅ Temporal fields: hour_of_day, day_of_week, business_hours
+# ✅ Audience data: device mix, demographics, interests
+```
+
+#### **Calculated Fields Layer**
+```python
+# Add business intelligence without regenerating data
+from services.performance_ext import add_extended_metrics_to_performance
+
+# Computes derived metrics:
+# 🧮 Viewability rates, completion percentages
+# 🧮 Supply funnel efficiency, auction win rates
+# 🧮 Effective CPM, average watch time
+# 🧮 Error rates, timeout percentages
+```
 
 ### **Complete Examples**
 - **Luxury Auto Awareness** - High-budget TV campaigns with premium targeting
@@ -157,10 +210,24 @@ registry.Advertiser(...)
 - **Conversion Interactive** - Interactive elements, QR codes, business targeting
 - **Multi-Device Advanced** - Cross-platform campaigns with advanced targeting
 
-### **Performance Data**
-- **Hourly Metrics** - Impressions, clicks, conversions, spend
-- **Realistic Ranges** - Based on industry benchmarks and Netflix data
-- **Extended Metrics** - Viewability, completion rates, engagement metrics
+### **Performance Metrics Coverage**
+
+#### **Basic Metrics (Generated)**
+- **Impressions & Reach** - Total served, unique users
+- **Engagement** - Clicks, CTR, completion rates
+- **Quality** - Render rates, fill rates, response rates
+- **Video** - Start rates, skip rates, progression tracking
+
+#### **Extended Metrics (Generated)**
+- **Supply Funnel** - Requests → Responses → Eligible → Auctions → Impressions
+- **Video Progression** - Q25, Q50, Q75, Q100 completion tracking
+- **Quality Indicators** - Viewability, audibility, error rates
+- **Financial** - Spend tracking, effective CPM calculation
+
+#### **Calculated Fields (Computed)**
+- **Efficiency Metrics** - Fill rates, win rates, completion percentages
+- **Business Intelligence** - Watch time estimates, engagement quality
+- **Performance Ratios** - Error rates, timeout percentages, supply efficiency
 
 ## 🧪 **Testing & Quality**
 
@@ -180,11 +247,27 @@ make test-one FILE=tests/test_flows_v1.py  # Run specific test file
 
 ### **Quality Assurance**
 - **Type Hints** - Full type annotation throughout
-- **Pydantic Validation** - Runtime data validation
-- **SQLAlchemy Constraints** - Database-level integrity
+- **Pydantic Validation** - Runtime data validation with computed fields
+- **SQLAlchemy Constraints** - Database-level integrity and constraints
 - **Comprehensive Testing** - 100% test coverage of core functionality
+- **Zero Duplication** - Shared utilities and single data generation point
 
 ## 🔧 **Development & Customization**
+
+### **Adding New Performance Metrics**
+```python
+# 1. Add raw field to models/orm.py CampaignPerformance
+new_metric: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+# 2. Generate data in services/performance.py
+"new_metric": rng.randint(min_val, max_val)
+
+# 3. Add calculated field in services/performance_ext.py
+@computed_field
+@property
+def new_metric_rate(self) -> float:
+    return self.new_metric / self.impressions if self.impressions > 0 else 0.0
+```
 
 ### **Adding New Enums**
 ```python
@@ -232,6 +315,8 @@ new_profile:
 - **Generation Speed** - Complete dataset in ~15 seconds
 - **Memory Usage** - Efficient streaming for large datasets
 - **Scalability** - Easy to extend for more campaigns and data
+- **Efficiency** - Zero code duplication, shared utilities
+- **Maintainability** - Single data generation point, easy to modify
 
 ## 🚀 **Future Enhancements**
 
@@ -241,14 +326,16 @@ new_profile:
 - **🤖 AI Integration** - ML-powered content and targeting optimization
 - **📱 Mobile App** - Native mobile interface for data management
 - **☁️ Cloud Deployment** - Docker containers and cloud deployment
+- **📈 Advanced Analytics** - More sophisticated calculated fields and insights
 
 ## 🤝 **Contributing**
 
 1. **Fork** the repository
 2. **Create** a feature branch
 3. **Follow** the registry pattern for new components
-4. **Add tests** for new functionality
-5. **Submit** a pull request
+4. **Use** shared utilities to avoid code duplication
+5. **Add tests** for new functionality
+6. **Submit** a pull request
 
 ## 📄 **License**
 
@@ -258,7 +345,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - **Netflix** for the streaming platform inspiration
 - **SQLAlchemy** team for the excellent ORM
-- **Pydantic** team for data validation
+- **Pydantic** team for data validation and computed fields
 - **Faker** team for realistic data generation
 
 ---
@@ -266,7 +353,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Ready to generate Netflix ads data?** 🚀
 
 ```bash
-./run_all.sh  # Generate complete dataset
+./run_all.sh  # Generate complete dataset with zero duplication
 ```
 
 **Questions or issues?** Check the tests or open an issue!
+
+**Key Benefits of the New Architecture:**
+- ✅ **Zero Code Duplication** - Single data generation point
+- ✅ **Efficient Performance** - Shared utilities and smart calculation
+- ✅ **Easy Maintenance** - Changes in one place affect everything
+- ✅ **Rich Metrics** - Basic + extended + calculated fields
+- ✅ **Scalable Design** - Easy to add new metrics and calculations

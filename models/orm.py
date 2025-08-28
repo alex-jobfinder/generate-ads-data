@@ -440,7 +440,26 @@ class CampaignPerformance(Base):
     video_start: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # Video start count
     frequency: Mapped[int] = mapped_column(Integer, nullable=False)
     reach: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Optional: enrich with audience composition reflecting simple preferences
     audience_json: Mapped[str | None] = mapped_column(Text)
+    
+    # Extended performance metrics (raw data only)
+    requests: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Total ad requests made")
+    responses: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Total responses received")
+    eligible_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Impressions eligible after targeting")
+    auctions_won: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Auctions won")
+    viewable_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Viewable impressions")
+    audible_impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Audible impressions")
+    video_q25: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 25% completion")
+    video_q50: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 50% completion")
+    video_q75: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 75% completion")
+    video_q100: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that reached 100% completion")
+    skips: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Video ads that were skipped")
+    qr_scans: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="QR code scans")
+    interactive_engagements: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Interactive engagements")
+    spend: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Total spend in cents")
+    error_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Error count")
+    timeout_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Timeout count")
     
     # Temporal breakdown columns
     human_readable: Mapped[str] = mapped_column(Text, nullable=False, comment="Human-readable timestamp string")

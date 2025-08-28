@@ -65,7 +65,6 @@ from .enums import (
 # Import all ORM models from orm.py
 from .orm import (
     Base,
-    ColumnCmoment,
     EntityBase,
     Advertiser,
     Campaign,
@@ -157,7 +156,6 @@ class ORMRegistry:
     """Registry for all SQLAlchemy ORM models."""
     
     Base = Base
-    ColumnCmoment = ColumnCmoment
     EntityBase = EntityBase
     Advertiser = Advertiser
     Campaign = Campaign

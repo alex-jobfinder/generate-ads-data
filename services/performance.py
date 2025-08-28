@@ -27,6 +27,12 @@ from sqlalchemy import select, delete
 
 from db_utils import session_scope
 from models.registry import registry
+from services.performance_utils import (
+    get_campaign_and_flight,
+    clear_existing_performance,
+    batch_insert_performance,
+    create_performance_row
+)
 import json
 
 
@@ -198,11 +204,9 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
     timestamp_generator = TimestampDataGenerator()
     
     with session_scope() as s:
-        camp = s.execute(select(registry.Campaign).where(registry.Campaign.id == campaign_id)).scalar_one_or_none()
-        if camp is None:
-            return 0
-        flight = s.execute(select(registry.Flight).where(registry.Flight.campaign_id == campaign_id)).scalar_one_or_none()
-        if flight is None:
+        # Get campaign and flight data using shared utility
+        camp, flight = get_campaign_and_flight(s, campaign_id)
+        if camp is None or flight is None:
             return 0
 
         # Align bounds to whole hours in UTC. Start at 00:00, end at last full hour.
@@ -211,7 +215,7 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
 
         if replace:
             # Clear any previous synthetic rows for idempotent re-generation.
-            s.execute(delete(registry.CampaignPerformance).where(registry.CampaignPerformance.campaign_id == campaign_id))
+            clear_existing_performance(s, registry.CampaignPerformance, campaign_id)
 
         rows = 0
         all_rows = []  # Collect all rows for batch insert
@@ -265,40 +269,56 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
             frequency = max(1, min(5, int(round(base_frequency * (1.0 + 0.15 * max(0.0, factor - 1.0))))))
             reach = max(1, impressions // max(1, frequency))
 
-            # Create performance row with RAW DATA ONLY
-            perf = registry.CampaignPerformance(
-                campaign_id=campaign_id,
-                hour_ts=hour,
-                # Raw counts only - no calculated fields
-                impressions=impressions,
-                clicks=clicks,
-                # Calculate and store actual rates (not raw counts)
-                ctr=raw_ctr,  # This is already a rate (0.0-0.05)
-                completion_rate=completion_count,  # This is a percentage (0-100)
-                render_rate=render_factor,  # This is already a rate (0.0-1.0)
-                fill_rate=fill_factor,      # This is already a rate (0.0-1.0)
-                response_rate=response_factor,  # This is already a rate (0.0-1.0)
-                video_skip_rate=skip_factor,    # This is already a rate (0.0-1.0)
-                video_start=video_start,
-                frequency=frequency,
-                reach=reach,
-                # Temporal breakdown fields
-                human_readable=hour.strftime("%Y-%m-%d %H:%M:%S %Z"),
-                hour_of_day=hour.hour,
-                minute_of_hour=hour.minute,
-                second_of_minute=hour.second,
-                day_of_week=hour.weekday(),  # Monday=0, Sunday=6
-                is_business_hour=1 if 9 <= hour.hour <= 17 and hour.weekday() < 5 else 0,
-            )
+            # Create performance row using shared utility
+            base_fields = {
+                # Basic performance metrics
+                "impressions": impressions,
+                "clicks": clicks,
+                "ctr": raw_ctr,  # This is already a rate (0.0-0.05)
+                "completion_rate": completion_count,  # This is a percentage (0-100)
+                "render_rate": render_factor,  # This is already a rate (0.0-1.0)
+                "fill_rate": fill_factor,      # This is already a rate (0.0-1.0)
+                "response_rate": response_factor,  # This is already a rate (0.0-1.0)
+                "video_skip_rate": skip_factor,    # This is already a rate (0.0-1.0)
+                "video_start": video_start,
+                "frequency": frequency,
+                "reach": reach,
+                
+                # Extended performance metrics (raw data only)
+                "requests": int(impressions * rng.uniform(1.1, 1.8)),
+                "responses": int(impressions * rng.uniform(0.92, 1.04)),
+                "eligible_impressions": int(impressions * rng.uniform(0.85, 0.99)),
+                "auctions_won": int(impressions * rng.uniform(0.90, 1.02)),
+                "viewable_impressions": int(impressions * max(0.70, min(0.99, rng.uniform(0.80, 0.98) * factor))),
+                "audible_impressions": int(impressions * max(0.20, min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)))),
+                "video_q25": int(video_start * max(0.60, min(0.98, rng.uniform(0.70, 0.95)))),
+                "video_q50": int(video_start * max(0.40, min(0.90, rng.uniform(0.55, 0.90)))),
+                "video_q75": int(video_start * max(0.25, min(0.80, rng.uniform(0.40, 0.80)))),
+                "video_q100": int(video_start * max(0.10, min(0.70, rng.uniform(0.25, 0.70)))),
+                "skips": int(video_start * max(0.05, min(0.60, rng.uniform(0.10, 0.40) * (2.0 - min(1.5, factor))))),
+                "qr_scans": int(impressions * rng.uniform(0.0003, 0.006)),
+                "interactive_engagements": int(impressions * rng.uniform(0.001, 0.02)),
+                "spend": int((impressions * rng.randint(1200, 4500) * rng.uniform(0.9, 1.1) * (0.95 + 0.1 * min(1.5, factor))) // 1000),
+                "error_count": int(impressions * rng.uniform(0.0005, 0.004)),
+                "timeout_count": int(impressions * rng.uniform(0.0005, 0.003)),
+            }
             
             # Optional: enrich with audience composition reflecting simple preferences
-            perf.audience_json = json.dumps(_audience_mix(rng, hour, impressions))
+            audience_data = _audience_mix(rng, hour, impressions)
+            base_fields["audience_json"] = json.dumps(audience_data)
+            
+            perf = create_performance_row(
+                registry.CampaignPerformance,
+                campaign_id,
+                hour,
+                base_fields
+            )
+            
             all_rows.append(perf)  # Collect instead of immediate add
             rows += 1
         
         # Batch insert all rows at once for better SQLite performance
-        s.bulk_save_objects(all_rows)
-        s.flush()
+        batch_insert_performance(s, all_rows)
         
         return rows
 
