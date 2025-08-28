@@ -18,31 +18,28 @@ Public API
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+import json
 import math
+from datetime import datetime, timedelta, timezone
 from random import Random
 from typing import Iterable
-
-from sqlalchemy import select, delete
 
 from db_utils import session_scope
 from models.registry import registry
 from services.performance_utils import (
-    get_campaign_and_flight,
-    clear_existing_performance,
     batch_insert_performance,
-    create_performance_row
+    clear_existing_performance,
+    create_performance_row,
+    get_campaign_and_flight,
 )
-import json
-
 
 
 class TimestampDataGenerator:
     """Generate temporal factors for performance data generation."""
-    
+
     def __init__(self):
         pass
-    
+
     def hourly_boost(self, dt: datetime) -> float:
         """Return a multiplicative uplift factor for the given hour.
 
@@ -58,7 +55,7 @@ class TimestampDataGenerator:
             g = math.exp(-0.5 * x * x)
             return 1.0 + 0.45 * g
         return 1.0
-    
+
     def dow_factor(self, dt: datetime) -> float:
         """Day-of-week multiplier: weekends slightly less busy than weekdays.
 
@@ -72,7 +69,7 @@ class TimestampDataGenerator:
         if wd == 6:  # Sun
             return 0.92
         return 1.00
-    
+
     def ramp_factor(self, start_dt: datetime, current_dt: datetime, end_dt: datetime) -> float:
         """Smooth ramp over the flight to emulate 'store openings' or audience growth.
 
@@ -84,11 +81,11 @@ class TimestampDataGenerator:
         # Logistic-ish curve centered at mid-flight
         x = (t - 0.5) * 6.0
         s = 1.0 / (1.0 + math.exp(-x))  # 0..1
-        ramp = 0.85 + 0.30 * s          # 0.85..1.15
+        ramp = 0.85 + 0.30 * s  # 0.85..1.15
         # Mild weekly undulation (period ~168 hours)
         weekly = 1.0 + 0.03 * math.sin(2.0 * math.pi * (current_dt - start_dt).total_seconds() / (168.0 * 3600.0))
         return ramp * weekly
-    
+
     def annual_factor(self, dt: datetime) -> float:
         """Annual seasonality factor similar to jafgen's AnnualCurve.
 
@@ -98,14 +95,14 @@ class TimestampDataGenerator:
         yday = dt.timetuple().tm_yday
         x = 2.0 * math.pi * (yday - 1) / 365.0
         return (math.cos(x) + 1.0) / 10.0 + 0.8
-    
+
     def calculate_temporal_factor(self, start_dt: datetime, current_dt: datetime, end_dt: datetime) -> float:
         """Calculate combined temporal factor from all components."""
         hod_factor = self.hourly_boost(current_dt)
         dow_factor = self.dow_factor(current_dt)
         ramp_factor = self.ramp_factor(start_dt, current_dt, end_dt)
         annual_factor = self.annual_factor(current_dt)
-        
+
         return hod_factor * dow_factor * ramp_factor * annual_factor
 
 
@@ -144,7 +141,7 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
     """
     rng = Random(seed)
     timestamp_generator = TimestampDataGenerator()
-    
+
     with session_scope() as s:
         # Get campaign and flight data using shared utility
         camp, flight = get_campaign_and_flight(s, campaign_id)
@@ -153,7 +150,9 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
 
         # Align bounds to whole hours in UTC. Start at 00:00, end at last full hour.
         start_dt = datetime.combine(flight.start_date, datetime.min.time(), tzinfo=timezone.utc)
-        end_dt = datetime.combine(flight.end_date, datetime.max.time(), tzinfo=timezone.utc).replace(minute=0, second=0, microsecond=0)
+        end_dt = datetime.combine(flight.end_date, datetime.max.time(), tzinfo=timezone.utc).replace(
+            minute=0, second=0, microsecond=0
+        )
 
         if replace:
             # Clear any previous synthetic rows for idempotent re-generation.
@@ -184,22 +183,18 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
             # Generate raw render count (not rate)
             base_render = rng.uniform(0.95, 0.99)
             render_factor = min(0.999, max(0.90, base_render * factor))
-            render_count = int(impressions * render_factor)
 
             # Generate raw fill count (not rate)
             base_fill = rng.uniform(0.85, 0.98)
             fill_factor = min(0.999, max(0.80, base_fill * factor))
-            fill_count = int(impressions * fill_factor)
 
             # Generate raw response count (not rate)
             base_response = rng.uniform(0.01, 0.05)
             response_factor = min(0.10, max(0.001, base_response * factor))
-            response_count = int(impressions * response_factor)
 
             # Generate raw video skip count (not rate)
             base_skip = rng.uniform(0.10, 0.40)
             skip_factor = min(0.60, max(0.05, base_skip * (2.0 - factor)))  # Better performance = lower skip rate
-            skips = int(impressions * skip_factor)
 
             # Generate raw video start count (not rate)
             base_start_rate = rng.uniform(0.80, 0.95)
@@ -215,30 +210,27 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
             requests = int(impressions * rng.uniform(1.1, 1.8))
             # Ensure responses >= 0.9 * requests to satisfy database constraint
             min_responses = int(0.9 * requests) + 1  # Add 1 to ensure we're above the threshold
-            max_responses = int(1.04 * impressions)
             responses = max(min_responses, int(impressions * rng.uniform(0.92, 1.04)))
-            
+
             # Generate video quartiles in descending order to satisfy constraints
             video_q25 = int(video_start * max(0.60, min(0.98, rng.uniform(0.70, 0.95))))
             video_q50 = int(video_start * max(0.40, min(0.90, rng.uniform(0.55, 0.90))))
             video_q75 = int(video_start * max(0.25, min(0.80, rng.uniform(0.40, 0.80))))
             video_q100 = int(video_start * max(0.10, min(0.70, rng.uniform(0.25, 0.70))))
-            
+
             # Ensure proper ordering: q25 >= q50 >= q75 >= q100
             video_q50 = min(video_q50, video_q25)
             video_q75 = min(video_q75, video_q50)
             video_q100 = min(video_q100, video_q75)
-            
+
             # Generate eligible_impressions ensuring it's at least 80% of responses
             min_eligible = int(0.8 * responses) + 1
-            max_eligible = int(0.99 * impressions)
             eligible_impressions = max(min_eligible, int(impressions * rng.uniform(0.85, 0.99)))
-            
+
             # Generate auctions_won ensuring it's at least 80% of eligible_impressions
             min_auctions = int(0.8 * eligible_impressions) + 1
-            max_auctions = int(1.02 * impressions)
             auctions_won = max(min_auctions, int(impressions * rng.uniform(0.90, 1.02)))
-            
+
             base_fields = {
                 # Basic performance metrics
                 "impressions": impressions,
@@ -246,20 +238,25 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
                 "ctr": raw_ctr,  # This is already a rate (0.0-0.05)
                 "completion_rate": completion_count,  # This is a percentage (0-100)
                 "render_rate": render_factor,  # This is already a rate (0.0-1.0)
-                "fill_rate": fill_factor,      # This is already a rate (0.0-1.0)
+                "fill_rate": fill_factor,  # This is already a rate (0.0-1.0)
                 "response_rate": response_factor,  # This is already a rate (0.0-1.0)
-                "video_skip_rate": skip_factor,    # This is already a rate (0.0-1.0)
+                "video_skip_rate": skip_factor,  # This is already a rate (0.0-1.0)
                 "video_start": video_start,
                 "frequency": frequency,
                 "reach": reach,
-                
                 # Extended performance metrics (raw data only)
                 "requests": requests,
                 "responses": responses,
                 "eligible_impressions": eligible_impressions,
                 "auctions_won": auctions_won,
                 "viewable_impressions": int(impressions * max(0.70, min(0.99, rng.uniform(0.80, 0.98) * factor))),
-                "audible_impressions": int(impressions * max(0.20, min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)))),
+                "audible_impressions": int(
+                    impressions
+                    * max(
+                        0.20,
+                        min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)),
+                    )
+                ),
                 "video_q25": video_q25,
                 "video_q50": video_q50,
                 "video_q75": video_q75,
@@ -267,28 +264,26 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
                 "skips": int(video_start * max(0.05, min(0.60, rng.uniform(0.10, 0.40) * (2.0 - min(1.5, factor))))),
                 "qr_scans": int(impressions * rng.uniform(0.0003, 0.006)),
                 "interactive_engagements": int(impressions * rng.uniform(0.001, 0.02)),
-                "spend": int((impressions * rng.randint(1200, 4500) * rng.uniform(0.9, 1.1) * (0.95 + 0.1 * min(1.5, factor))) // 1000),
+                "spend": int(
+                    (impressions * rng.randint(1200, 4500) * rng.uniform(0.9, 1.1) * (0.95 + 0.1 * min(1.5, factor)))
+                    // 1000
+                ),
                 "error_count": int(impressions * rng.uniform(0.0005, 0.004)),
                 "timeout_count": int(impressions * rng.uniform(0.0005, 0.003)),
             }
-            
+
             # Optional: enrich with audience composition reflecting simple preferences
             audience_data = _audience_mix(rng, hour, impressions)
             base_fields["audience_json"] = json.dumps(audience_data)
-            
-            perf = create_performance_row(
-                registry.CampaignPerformance,
-                campaign_id,
-                hour,
-                base_fields
-            )
-            
+
+            perf = create_performance_row(registry.CampaignPerformance, campaign_id, hour, base_fields)
+
             all_rows.append(perf)  # Collect instead of immediate add
             rows += 1
-        
+
         # Batch insert all rows at once for better SQLite performance
         batch_insert_performance(s, all_rows)
-        
+
         return rows
 
 
@@ -314,6 +309,7 @@ def _audience_mix(rng: Random, dt: datetime, impressions: int) -> dict:
         "55-64": 0.13,
         "65+": 0.07,
     }
+
     # Normalize helper
     def _normalize(d: dict[str, float]) -> dict[str, float]:
         s = sum(d.values()) or 1.0

@@ -8,15 +8,16 @@ Recommended improvements:
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
-from dataclasses import dataclass
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Iterator
-from rich import print
-from sqlalchemy import create_engine, text
+
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
+
 from models.registry import registry
 
 
@@ -78,9 +79,6 @@ def init_db() -> None:
     registry.Base.metadata.create_all(bind=engine)
 
 
-
-
-
 def migrate_db() -> None:
     """
     Lightweight, Alembic-style migration shim for SQLite.
@@ -107,9 +105,7 @@ def migrate_db() -> None:
             idx_rows = conn.exec_driver_sql("PRAGMA index_list('campaigns')").fetchall()
             idx_names = {r[1] for r in idx_rows}  # r[1] = name
             if "ix_campaign_status_created" not in idx_names:
-                conn.exec_driver_sql(
-                    "CREATE INDEX ix_campaign_status_created ON campaigns(status, created_at)"
-                )
+                conn.exec_driver_sql("CREATE INDEX ix_campaign_status_created ON campaigns(status, created_at)")
         except Exception:
             pass
 
@@ -125,7 +121,7 @@ def migrate_db() -> None:
                 ("video_skip_rate", "NUMERIC(5,4) NOT NULL DEFAULT 0.0"),
                 ("video_start", "INTEGER NOT NULL DEFAULT 0"),
             ]
-            
+
             for col_name, col_def in new_columns:
                 if col_name not in perf_cols:
                     conn.exec_driver_sql(f"ALTER TABLE campaign_performance ADD COLUMN {col_name} {col_def}")
@@ -149,6 +145,7 @@ def session_scope() -> Iterator:
 
 # ---------- Helper methods moved from cli.py ----------
 
+
 def setup_env(log_level: str | None = None, db_url: str | None = None, seed: int | None = None) -> None:
     """Set common environment knobs for CLI commands."""
     if log_level:
@@ -157,6 +154,7 @@ def setup_env(log_level: str | None = None, db_url: str | None = None, seed: int
         os.environ["ADS_DB_URL"] = db_url
     if seed is not None:
         from factories.faker_providers import seed_all as faker_seed_all
+
         faker_seed_all(seed)
 
 
@@ -166,7 +164,7 @@ def safe_load_yaml(path: str) -> dict[str, any]:
         import yaml
     except ImportError:
         raise ImportError("PyYAML is required: pip install pyyaml")
-    
+
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -182,7 +180,7 @@ def safe_load_yaml(path: str) -> dict[str, any]:
 def parse_date(value: any) -> str:
     """Coerce either a date or YYYY-MM-DD string into a date object."""
     from datetime import date
-    
+
     if isinstance(value, date):
         return value
     if isinstance(value, str) and len(value.split("-")) == 3:
@@ -197,7 +195,7 @@ def parse_date(value: any) -> str:
 def coerce_creative(c: dict[str, any]) -> any:
     """Convert a loosely-typed creative dict into a CreativeCreate schema."""
     from models.registry import registry
-    
+
     return registry.CreativeCreate(
         asset_url=c.get("asset_url", "https://example.com/ad.mp4"),
         mime_type=c.get("mime_type", "VIDEO/MP4"),
@@ -209,15 +207,22 @@ def build_auto_campaign(advertiser_id: int | None, profile: str | None) -> any:
     """Build a single demo campaign payload for an advertiser."""
     import random
     from decimal import Decimal
-    from models.registry import registry
+
     from factories.faker_providers import (
-        fake_campaign_dates, fake_budget_and_cpm, fake_line_item_name,
-        fake_asset, fake_targeting_v2, profile_tuned_cpm, profile_tuned_budget,
-        profile_tuned_targeting, make_profile_creative
+        fake_asset,
+        fake_budget_and_cpm,
+        fake_campaign_dates,
+        fake_line_item_name,
+        fake_targeting_v2,
+        make_profile_creative,
+        profile_tuned_budget,
+        profile_tuned_cpm,
+        profile_tuned_targeting,
     )
-    
+    from models.registry import registry
+
     start, end = fake_campaign_dates()
-    
+
     if profile:
         amount, cpm = profile_tuned_budget(profile), profile_tuned_cpm(profile)
         btype = random.choice([registry.BudgetType.lifetime.value, registry.BudgetType.daily.value])
@@ -239,35 +244,35 @@ def build_auto_campaign(advertiser_id: int | None, profile: str | None) -> any:
         dsp_partner="DV360",
         flight=registry.FlightSchema(start_date=start, end_date=end),
         budget=registry.BudgetSchema(amount=Decimal(str(amount)), type=btype, currency="USD"),
-        line_items=[registry.LineItemCreate(
-            name=fake_line_item_name(),
-            ad_format="STANDARD_VIDEO",
-            bid_cpm=Decimal(str(cpm)),
-            pacing_pct=100,
-            targeting=targeting,
-            creatives=[creative],
-        )],
+        line_items=[
+            registry.LineItemCreate(
+                name=fake_line_item_name(),
+                ad_format="STANDARD_VIDEO",
+                bid_cpm=Decimal(str(cpm)),
+                pacing_pct=100,
+                targeting=targeting,
+                creatives=[creative],
+            )
+        ],
     )
 
-# db_utils.py (or a new utils module)
-from sqlalchemy import insert, text
 
+# db_utils.py (or a new utils module)
 
 
 def persist_advertiser(payload: any) -> int:
     """Get-or-create an advertiser by unique contact_email; return its id."""
-    from sqlalchemy import select
-    from models.registry import registry
+
     from services.generator import create_advertiser_payload
-    
+
     with session_scope() as s:
         existing = s.execute(
             select(registry.Advertiser).where(registry.Advertiser.contact_email == payload.contact_email)
         ).scalar_one_or_none()
-        
+
         if existing:
             return existing.id
-            
+
         adv = create_advertiser_payload(payload)
         s.add(adv)
         s.flush()
@@ -277,16 +282,14 @@ def persist_advertiser(payload: any) -> int:
 
 def persist_campaign(advertiser_id: int | None, payload: any, return_ids: bool = False) -> dict[str, any]:
     """Validate and persist a campaign and its children."""
-    import json
-    from sqlalchemy import select
-    from models.registry import registry
+
     from services.generator import create_campaign_payload
     from services.validators import validate_campaign_v1
-    
+
     if advertiser_id is None:
         print(json.dumps({"error": "advertiser_id is required"}))
         raise SystemExit(4)
-    
+
     try:
         validate_campaign_v1(payload)
     except Exception as e:
@@ -295,44 +298,48 @@ def persist_campaign(advertiser_id: int | None, payload: any, return_ids: bool =
 
     with session_scope() as s:
         # Verify advertiser exists
-        if not s.execute(select(registry.Advertiser).where(registry.Advertiser.id == advertiser_id)).scalar_one_or_none():
+        if not s.execute(
+            select(registry.Advertiser).where(registry.Advertiser.id == advertiser_id)
+        ).scalar_one_or_none():
             print(json.dumps({"error": f"Advertiser with id {advertiser_id} not found"}))
             raise SystemExit(2)
-        
+
         # Create campaign objects
         camp, flight, budget, freq, line_item, creatives = create_campaign_payload(payload)
         camp.advertiser_id = advertiser_id
-        
+
         # Persist campaign hierarchy
         s.add(camp)
         s.flush()
-        
+
         for obj in [flight, budget, line_item]:
             obj.campaign_id = camp.id
             s.add(obj)
-        
+
         if freq:
             freq.campaign_id = camp.id
             s.add(freq)
-        
+
         s.flush()
-        
+
         # Add creatives
         for cr in creatives:
-            s.add(registry.Creative(
-                line_item_id=line_item.id,
-                asset_url=cr.asset_url,
-                mime_type=cr.mime_type,
-                duration_seconds=int(cr.duration_seconds),
-                qa_status=registry.QAStatus.approved.value,
-            ))
-        
+            s.add(
+                registry.Creative(
+                    line_item_id=line_item.id,
+                    asset_url=cr.asset_url,
+                    mime_type=cr.mime_type,
+                    duration_seconds=int(cr.duration_seconds),
+                    qa_status=registry.QAStatus.approved.value,
+                )
+            )
+
         s.flush()
         result = {"campaign_id": camp.id, "line_item_id": line_item.id}
-        
+
         if return_ids:
             result["advertiser_id"] = advertiser_id
-        
+
         print(json.dumps(result))
         return result
 
@@ -340,6 +347,7 @@ def persist_campaign(advertiser_id: int | None, payload: any, return_ids: bool =
 def generate_hourly_performance(campaign_id: int, seed: int | None = None, replace: bool = True) -> int:
     """Generate synthetic hourly performance rows for a campaign."""
     from services.performance import generate_hourly_performance as _generate_hourly_performance
+
     return _generate_hourly_performance(campaign_id, seed=seed, replace=replace)
 
 

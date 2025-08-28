@@ -9,10 +9,10 @@ Recommended improvements:
 from __future__ import annotations
 
 import json
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
-from models.registry import registry, Registry
+from models.registry import registry
 
 
 def _q2(value: Decimal) -> Decimal:
@@ -53,7 +53,16 @@ def _map_campaign_status_to_entity(status: object) -> str:
         return registry.EntityStatusStr.INACTIVE.value
 
 
-def create_campaign_payload(data: registry.CampaignCreate) -> tuple[registry.Campaign, registry.Flight, registry.Budget, Optional[registry.FrequencyCap], registry.LineItem, list[registry.CreativeCreate]]:
+def create_campaign_payload(
+    data: registry.CampaignCreate,
+) -> tuple[
+    registry.Campaign,
+    registry.Flight,
+    registry.Budget,
+    Optional[registry.FrequencyCap],
+    registry.LineItem,
+    list[registry.CreativeCreate],
+]:
     camp = registry.Campaign(
         advertiser_id=int(data.advertiser_id) if data.advertiser_id is not None else 0,
         name=data.name,
@@ -88,5 +97,3 @@ def create_campaign_payload(data: registry.CampaignCreate) -> tuple[registry.Cam
     line_item = _create_line_item(0, li)  # set FK after insert
 
     return camp, flight, budget, freq, line_item, li.creatives
-
-

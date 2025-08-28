@@ -70,28 +70,16 @@ clean:
 	rm -f ads.db ads_p0.db ads_p0.db-shm ads_p0.db-wal
 	rm -rf __pycache__ .pytest_cache $(VENV)
 
-# # All tests passing
-# make clean              # Clean up
-# make init-db            # Reset database	
-# make test
+# Run all tests                                                                                                                                                                                                                   ─╯
+# poetry run pytest
 
-# # Streamlined workflow
-# make run-config-seed    # Fresh setup with config + performance
-# make seed-5x5-no-init   # Add more data with performance
-# make clean              # Clean up
-# make init-db            # Reset database	
+# # Run specific test files
+# poetry run pytest tests/test_performance_metrics.py
 
-# ===== NEW 5x5 SEEDING WITH BATCH PERFORMANCE =====
-# These commands use the new CLI with batch insert optimization for SQLite
-#
-# make seed-5x5-batch          # 5x5 + both performance types (batch inserts)
-# make seed-5x5-normal         # 5x5 + normal performance only (batch inserts)  
-# make seed-5x5-extended       # 5x5 + extended performance only (batch inserts)
-# make seed-5x5-reproducible   # 5x5 + both performance types + seed=42 (batch inserts)
-# make run-config-seed-5x5     # Fresh DB + config + 5x5 + both performance types
-#
-# Performance benefits:
-# - Normal performance: Uses services/performance.py with batch inserts
-# - Extended performance: Uses services/performance_ext.py with batch inserts  
-# - SQLite optimized: Single transaction per performance type instead of 25 individual
-# - Faster execution: Especially noticeable for longer campaign flights
+# # Generate data
+# poetry run python cli.py init-db
+# poetry run ./run_all.sh
+
+# # Format and lint code
+# poetry run black .
+# poetry run ruff check .

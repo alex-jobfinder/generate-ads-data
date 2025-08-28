@@ -8,51 +8,48 @@ Recommended improvements:
 """
 from __future__ import annotations
 
-from datetime import date, datetime
 import os
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, Literal, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field, conint, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, conint
 
 from .enums import (
-    Objective,
-    CampaignStatus,
-    BudgetType,
-    FreqCapUnit,
-    FreqCapScope,
-    DspPartner,
-    Currency,
     AdFormat,
-    CreativeMimeType,
-    TargetingKey,
     AdPlacement,
+    AdServerType,
+    AspectRatio,
+    AudioChannels,
+    AudioCodec,
+    BudgetType,
+    CampaignStatus,
+    ChromaSubsampling,
+    CleanRoomProvider,
+    ColorPrimaries,
+    ContentAdjacencyTier,
+    CreativeMimeType,
+    Currency,
+    Device,
+    DspPartner,
     FileFormat,
     FrameRate,
     FrameRateMode,
-    AspectRatio,
+    FreqCapScope,
+    FreqCapUnit,
+    GeoTier,
+    MeasurementPartner,
+    Objective,
+    PixelVendor,
+    PricingDefaults,
+    ProgrammaticBuyType,
     ScanType,
+    ServingDefaults,
+    TargetingDefaults,
+    TargetingKey,
+    TransferFunction,
     VideoCodecH264Profile,
     VideoCodecProresProfile,
-    ChromaSubsampling,
-    ColorPrimaries,
-    TransferFunction,
-    AudioCodec,
-    AudioChannels,
-    AdServerType,
-    PixelVendor,
-    ProgrammaticBuyType,
-    CleanRoomProvider,
-    ContentAdjacencyTier,
-    MeasurementPartner,
-    Device,
-    GeoTier,
-    TargetingDefaults,
-    is_valid_targeting_key,
-    clamp_cpm_to_defaults,
-    CreativeDefaults,
-    PricingDefaults,
-    ServingDefaults,
 )
 
 
@@ -95,7 +92,10 @@ class Targeting(BaseModel):
                 raise ValueError("age_range must be [min, max]")
             rng = (self.age_range[0], self.age_range[1])
             if rng not in TargetingDefaults.DEFAULT_AGE_RANGES:
-                raise ValueError(f"age_range {rng} not in allowed buckets {list(TargetingDefaults.DEFAULT_AGE_RANGES)}")
+                raise ValueError(
+                    f"age_range {rng} not in allowed buckets {list(TargetingDefaults.DEFAULT_AGE_RANGES)}"
+                )
+
 
 class CreativeCreate(BaseModel):
     asset_url: str
@@ -145,7 +145,7 @@ class LineItemCreate(BaseModel):
     name: str
     ad_format: AdFormat
     bid_cpm: Decimal
-    pacing_pct: conint(gt=ServingDefaults.PACING_PCT_MIN - 0, le=ServingDefaults.PACING_PCT_MAX) = ServingDefaults.PACING_PCT_MAX # type: ignore
+    pacing_pct: conint(gt=ServingDefaults.PACING_PCT_MIN - 0, le=ServingDefaults.PACING_PCT_MAX) = ServingDefaults.PACING_PCT_MAX  # type: ignore
     targeting: Dict[str, Any] = Field(default_factory=dict)
     creatives: List[CreativeCreate]
     # Additional delivery and serving metadata
@@ -169,6 +169,7 @@ class LineItemCreate(BaseModel):
             warn_soft = os.getenv("ADS_WARN_SOFT_CONSTRAINTS", "0").lower() in {"1", "true", "yes", "on"}
             if warn_soft:
                 from warnings import warn
+
                 # CPM soft bounds warning
                 min_cpm, max_cpm = PricingDefaults.CPM_RANGE_USD
                 if self.bid_cpm is not None and (self.bid_cpm < min_cpm or self.bid_cpm > max_cpm):
@@ -198,14 +199,16 @@ class CampaignCreate(BaseModel):
     budget: Budget
     line_items: List[LineItemCreate]
 
+
 Targeting.model_rebuild()
 
 
 # ===== Performance Data Schemas =====
 
+
 class PerformanceMetricsBase(BaseModel):
     """Base schema for performance metrics with raw data only."""
-    
+
     campaign_id: int
     hour_ts: datetime
     impressions: int = Field(ge=0, description="Total ad impressions served")
@@ -220,7 +223,7 @@ class PerformanceMetricsBase(BaseModel):
     frequency: int = Field(ge=1, description="Average frequency per user")
     reach: int = Field(ge=0, description="Unique users reached")
     audience_json: Optional[str] = Field(None, description="Audience composition JSON")
-    
+
     # Temporal breakdown fields
     human_readable: str = Field(description="Human-readable timestamp string")
     hour_of_day: int = Field(ge=0, le=23, description="Hour of day (0-23)")
@@ -228,39 +231,41 @@ class PerformanceMetricsBase(BaseModel):
     second_of_minute: int = Field(ge=0, le=59, description="Second of minute (0-59)")
     day_of_week: int = Field(ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
     is_business_hour: bool = Field(description="Whether this is during business hours")
-    
+
     model_config = {"arbitrary_types_allowed": True}
 
 
 class PerformanceMetricsCreate(PerformanceMetricsBase):
     """Schema for creating new performance metrics."""
+
     pass
 
 
 class PerformanceMetricsRead(PerformanceMetricsBase):
     """Schema for reading performance metrics."""
+
     id: int
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class ExtendedPerformanceMetricsBase(BaseModel):
     """Base schema for extended performance metrics with raw data only."""
-    
+
     campaign_id: int
     hour_ts: datetime
-    
+
     # Supply funnel
     requests: int = Field(ge=0, description="Total ad requests made")
     responses: int = Field(ge=0, description="Total responses received")
     eligible_impressions: int = Field(ge=0, description="Impressions eligible after targeting")
     auctions_won: int = Field(ge=0, description="Auctions won")
     impressions: int = Field(ge=0, description="Total ad impressions served")
-    
+
     # Quality metrics
     viewable_impressions: int = Field(ge=0, description="Viewable impressions")
     audible_impressions: int = Field(ge=0, description="Audible impressions")
-    
+
     # Video metrics
     video_starts: int = Field(ge=0, description="Video ads that began playing")
     video_q25: int = Field(ge=0, description="Video ads that reached 25% completion")
@@ -269,27 +274,27 @@ class ExtendedPerformanceMetricsBase(BaseModel):
     video_q100: int = Field(ge=0, description="Video ads that reached 100% completion")
     skips: int = Field(ge=0, description="Video ads that were skipped")
     avg_watch_time_seconds: int = Field(ge=0, le=3600, description="Average watch time in seconds")
-    
+
     # Interaction metrics
     clicks: int = Field(ge=0, description="Total click-through interactions")
     qr_scans: int = Field(ge=0, description="QR code scans")
     interactive_engagements: int = Field(ge=0, description="Interactive engagements")
-    
+
     # Audience metrics
     reach: int = Field(ge=0, description="Unique users reached")
     frequency: int = Field(ge=1, le=10, description="Average frequency per user")
-    
+
     # Spend metrics
     spend: int = Field(ge=0, description="Total spend in cents")
     effective_cpm: int = Field(ge=0, description="Effective CPM in cents")
-    
+
     # Reliability metrics
     error_count: int = Field(ge=0, description="Error count")
     timeout_count: int = Field(ge=0, description="Timeout count")
-    
+
     # Optional metadata
     comment: Optional[str] = Field(None, description="Additional notes or metadata")
-    
+
     # Temporal breakdown fields
     human_readable: str = Field(description="Human-readable timestamp string")
     hour_of_day: int = Field(ge=0, le=23, description="Hour of day (0-23)")
@@ -297,7 +302,7 @@ class ExtendedPerformanceMetricsBase(BaseModel):
     second_of_minute: int = Field(ge=0, le=59, description="Second of minute (0-59)")
     day_of_week: int = Field(ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
     is_business_hour: bool = Field(description="Whether this is during business hours")
-    
+
     # Calculated metrics
     ctr_recalc: float | None = Field(None, description="Recalculated CTR (clicks/impressions)")
     viewability_rate: float | None = Field(None, description="Viewability rate (viewable/impressions)")
@@ -311,19 +316,19 @@ class ExtendedPerformanceMetricsBase(BaseModel):
     error_rate: float | None = Field(None, description="Error rate (errors/requests)")
     timeout_rate: float | None = Field(None, description="Timeout rate (timeouts/requests)")
     supply_funnel_efficiency: float | None = Field(None, description="Supply funnel efficiency (eligible/requests)")
-        
-    
+
     model_config = {"arbitrary_types_allowed": True}
 
 
 class ExtendedPerformanceMetricsCreate(ExtendedPerformanceMetricsBase):
     """Schema for creating new extended performance metrics."""
+
     pass
 
 
 class ExtendedPerformanceMetricsRead(ExtendedPerformanceMetricsBase):
     """Schema for reading extended performance metrics."""
-    id: int
-    
-    model_config = ConfigDict(from_attributes=True)
 
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)

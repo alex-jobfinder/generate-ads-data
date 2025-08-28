@@ -10,13 +10,9 @@ from services.generator import create_advertiser_payload
 
 def test_schema_has_flattened_tables_and_no_base_entities_or_mapping() -> None:
     import db_utils as db_module
+
     with db_module.engine.connect() as conn:
-        tables = {
-            r[0]
-            for r in conn.execute(
-                text("SELECT name FROM sqlite_master WHERE type='table'")
-            ).fetchall()
-        }
+        tables = {r[0] for r in conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()}
         assert "advertisers" in tables
         assert "campaigns" in tables
         assert "line_items" in tables
@@ -28,18 +24,15 @@ def test_schema_has_flattened_tables_and_no_base_entities_or_mapping() -> None:
 
 def test_autoincrement_and_fk_cascade_on_delete() -> None:
     import db_utils as db_module
+
     with db_module.engine.begin() as conn:
         # Insert advertisers should autoincrement id
         conn.execute(
-            text(
-                "INSERT INTO advertisers(name, brand, contact_email, agency_name) VALUES (:n, :b, :e, :a)"
-            ),
+            text("INSERT INTO advertisers(name, brand, contact_email, agency_name) VALUES (:n, :b, :e, :a)"),
             {"n": "Acme 1", "b": None, "e": "a1@example.com", "a": None},
         )
         conn.execute(
-            text(
-                "INSERT INTO advertisers(name, brand, contact_email, agency_name) VALUES (:n, :b, :e, :a)"
-            ),
+            text("INSERT INTO advertisers(name, brand, contact_email, agency_name) VALUES (:n, :b, :e, :a)"),
             {"n": "Acme 2", "b": None, "e": "a2@example.com", "a": None},
         )
         adv_rows = conn.execute(text("SELECT id FROM advertisers ORDER BY id ASC")).fetchall()
@@ -74,27 +67,22 @@ def test_autoincrement_and_fk_cascade_on_delete() -> None:
                 "dsp": "DV360",
             },
         )
-        count_before = conn.execute(
-            text("SELECT COUNT(1) FROM campaigns WHERE advertiser_id=2")
-        ).scalar_one()
+        count_before = conn.execute(text("SELECT COUNT(1) FROM campaigns WHERE advertiser_id=2")).scalar_one()
         assert count_before == 2
 
         # Delete advertiser 2 should cascade delete campaigns
         conn.execute(text("DELETE FROM advertisers WHERE id=2"))
-        count_after = conn.execute(
-            text("SELECT COUNT(1) FROM campaigns WHERE advertiser_id=2")
-        ).scalar_one()
+        count_after = conn.execute(text("SELECT COUNT(1) FROM campaigns WHERE advertiser_id=2")).scalar_one()
         assert count_after == 0
 
 
 def test_currency_default_and_ad_format_text_and_not_nulls() -> None:
     import db_utils as db_module
+
     with db_module.engine.begin() as conn:
         # Insert advertiser
         conn.execute(
-            text(
-                "INSERT INTO advertisers(name, brand, contact_email, agency_name) VALUES (:n, :b, :e, :a)"
-            ),
+            text("INSERT INTO advertisers(name, brand, contact_email, agency_name) VALUES (:n, :b, :e, :a)"),
             {"n": "Acme 3", "b": None, "e": "a3@example.com", "a": None},
         )
         adv_id = conn.execute(text("SELECT id FROM advertisers LIMIT 1")).scalar_one()
@@ -164,10 +152,15 @@ def test_constraints_uniqueness_and_indexes() -> None:
 
     # invalid campaign.status should fail via CHECK constraint
     import db_utils as db_module
+
     with db_module.engine.begin() as conn:
         failed = False
         try:
-            conn.execute(text("INSERT INTO campaigns(advertiser_id, name, objective, status, target_cpm, dsp_partner) VALUES (1,'X','AWARENESS','invalid',100,'DV360')"))
+            conn.execute(
+                text(
+                    "INSERT INTO campaigns(advertiser_id, name, objective, status, target_cpm, dsp_partner) VALUES (1,'X','AWARENESS','invalid',100,'DV360')"
+                )
+            )
         except Exception:
             failed = True
         assert failed is True
@@ -189,7 +182,9 @@ def test_constraints_uniqueness_and_indexes() -> None:
 def test_check_constraints_and_json_index_presence() -> None:
     # invalid duration <= 0 should fail once CHECK added
     with session_scope() as s:
-        li = registry.LineItem(campaign_id=0, name="bad", ad_format="STANDARD_VIDEO", bid_cpm=1000, pacing_pct=100, targeting_json="{}")
+        li = registry.LineItem(
+            campaign_id=0, name="bad", ad_format="STANDARD_VIDEO", bid_cpm=1000, pacing_pct=100, targeting_json="{}"
+        )
         s.add(li)
         failed = False
         try:
@@ -204,8 +199,9 @@ def test_check_constraints_and_json_index_presence() -> None:
 def test_migrate_db_adds_checksum_and_index(tmp_path, monkeypatch) -> None:
     db_file = tmp_path / "migrate_demo.db"
     monkeypatch.setenv("ADS_DB_URL", f"sqlite:///{db_file}")
-    import db_utils as db_module
     from importlib import reload
+
+    import db_utils as db_module
 
     reload(db_module)
     db_module.init_db()
@@ -219,5 +215,3 @@ def test_migrate_db_adds_checksum_and_index(tmp_path, monkeypatch) -> None:
         assert "checksum" in cols
         idx_names = {r[1] for r in conn.exec_driver_sql("PRAGMA index_list('campaigns')").fetchall()}
         assert "ix_campaign_status_created" in idx_names
-
-

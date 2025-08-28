@@ -11,13 +11,13 @@ Recommended improvements:
 """
 from __future__ import annotations
 
-from enum import Enum, IntEnum
 from dataclasses import dataclass
 from decimal import Decimal
+from enum import Enum, IntEnum
 from typing import Optional, Type
 
 # SQLAlchemy helpers (used for reusable enum-backed columns)
-from sqlalchemy import String, CheckConstraint, text  # type: ignore
+from sqlalchemy import CheckConstraint, String, text  # type: ignore
 from sqlalchemy.orm import Mapped, mapped_column  # type: ignore
 
 
@@ -82,17 +82,20 @@ class EntityType(IntEnum):
     line_item = 3
     creative = 4
 
-# dont delete, reference to sp amazon; 
+
+# dont delete, reference to sp amazon;
 #     state                          TEXT NOT NULL CHECK (state IN ('ENABLED','PAUSED','ARCHIVED')
 class EntityStatus(IntEnum):
     active = 1
     inactive = 2
     deleted = 3
 
+
 class EntityStatusStr(str, Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     DELETED = "DELETED"
+
 
 class Objective(str, Enum):
     awareness = "AWARENESS"
@@ -107,7 +110,6 @@ class CampaignStatus(str, Enum):
     completed = "COMPLETED"
 
 
-
 class AdFormat(str, Enum):
     standard_video = "STANDARD_VIDEO"
     interactive_overlay = "INTERACTIVE_OVERLAY"
@@ -115,11 +117,11 @@ class AdFormat(str, Enum):
     binge_ads = "BINGE_ADS"
     sponsorship = "SPONSORSHIP"
 
+
 class AdPlacement(str, Enum):
     PRE_ROLL = "PRE_ROLL"
     MID_ROLL = "MID_ROLL"
     LIVE = "LIVE"
-
 
 
 class BudgetType(str, Enum):
@@ -198,8 +200,6 @@ class CreativeMimeType(str, Enum):
 class FileFormat(str, Enum):
     MP4 = "MP4"
     MOV = "MOV"
-
-
 
 
 class AdDuration(IntEnum):
@@ -330,6 +330,7 @@ def clamp_cpm_to_defaults(value: Decimal) -> Decimal:
 def is_allowed_creative_duration(seconds: int) -> bool:
     return seconds in CreativeDefaults.ALLOWED_CREATIVE_DURATIONS
 
+
 ### Generic column factory for any Enum defined in this module
 def enum_check_column(
     enum_cls: Type[Enum],
@@ -364,5 +365,3 @@ def status_column() -> Mapped[str]:
         length=8,
         nullable=False,
     )
-    
-    

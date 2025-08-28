@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from decimal import Decimal
+
 from sqlalchemy import text
 
 from db_utils import session_scope
-from models.registry import registry, Registry
-
+from models.registry import registry
 from services.generator import create_advertiser_payload, create_campaign_payload
 
 
@@ -22,7 +22,9 @@ def test_money_stored_as_and_timestamps_present() -> None:
         objective="AWARENESS",
         target_cpm=Decimal("42.50"),
         dsp_partner="DV360",
-        flight=registry.FlightSchema(start_date=__import__("datetime").date.today(), end_date=__import__("datetime").date.today()),
+        flight=registry.FlightSchema(
+            start_date=__import__("datetime").date.today(), end_date=__import__("datetime").date.today()
+        ),
         budget=registry.BudgetSchema(amount=Decimal("123.45"), type="LIFETIME", currency="USD"),
         line_items=[
             registry.LineItemCreate(
@@ -31,7 +33,11 @@ def test_money_stored_as_and_timestamps_present() -> None:
                 bid_cpm=Decimal("10.00"),
                 pacing_pct=100,
                 targeting={registry.TargetingKey.DEVICE.value: ["TV"]},
-                creatives=[registry.CreativeCreate(asset_url="https://ex.com/a.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15)],
+                creatives=[
+                    registry.CreativeCreate(
+                        asset_url="https://ex.com/a.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15
+                    )
+                ],
             )
         ],
     )
@@ -73,9 +79,24 @@ def test_timestamps_on_all_primary_tables() -> None:
         objective="AWARENESS",
         target_cpm=Decimal("10"),
         dsp_partner="DV360",
-        flight=registry.FlightSchema(start_date=__import__("datetime").date.today(), end_date=__import__("datetime").date.today()),
+        flight=registry.FlightSchema(
+            start_date=__import__("datetime").date.today(), end_date=__import__("datetime").date.today()
+        ),
         budget=registry.BudgetSchema(amount=Decimal("1"), type="LIFETIME", currency="USD"),
-        line_items=[registry.LineItemCreate(name="li", ad_format="STANDARD_VIDEO", bid_cpm=Decimal("10"), pacing_pct=100, targeting={}, creatives=[registry.CreativeCreate(asset_url="https://x/y.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15)])],
+        line_items=[
+            registry.LineItemCreate(
+                name="li",
+                ad_format="STANDARD_VIDEO",
+                bid_cpm=Decimal("10"),
+                pacing_pct=100,
+                targeting={},
+                creatives=[
+                    registry.CreativeCreate(
+                        asset_url="https://x/y.mp4", mime_type=registry.CreativeMimeType.mp4, duration_seconds=15
+                    )
+                ],
+            )
+        ],
     )
     camp, flight, budget, freq, li, creatives = create_campaign_payload(camp_payload)
     with session_scope() as s:
@@ -84,11 +105,15 @@ def test_timestamps_on_all_primary_tables() -> None:
         li.campaign_id = camp.id
         s.add(li)
         s.flush()
-        cr = registry.Creative(line_item_id=li.id, asset_url="https://x/y.mp4", mime_type=registry.CreativeMimeType.mp4.value, duration_seconds=15, qa_status="APPROVED")
+        cr = registry.Creative(
+            line_item_id=li.id,
+            asset_url="https://x/y.mp4",
+            mime_type=registry.CreativeMimeType.mp4.value,
+            duration_seconds=15,
+            qa_status="APPROVED",
+        )
         s.add(cr)
         s.flush()
         # at least campaign has timestamps (others to be added later in impl)
         assert getattr(camp, "created_at", None) is not None
         assert getattr(camp, "updated_at", None) is not None
-
-

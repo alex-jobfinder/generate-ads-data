@@ -8,9 +8,6 @@ Recommended improvements:
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Iterable
-
-from pydantic import ValidationError
 
 from models.registry import registry
 
@@ -26,5 +23,3 @@ def validate_campaign_v1(payload: registry.CampaignCreate) -> None:
     max_cpm = registry.PricingDefaults.DEFAULT_CPM_MAX
     if not (Decimal(min_cpm) <= payload.target_cpm <= Decimal(max_cpm)):
         raise ValueError(f"target_cpm must be between {min_cpm} and {max_cpm}")
-
-
