@@ -1,0 +1,25 @@
+---
+name: "PR Review (Senior Level)"
+description: "Review a pull request for correctness, perf, security, and maintainability."
+variables:
+  - name: diff_or_link
+    description: "Paste the diff or PR link/content"
+---
+Act as a senior reviewer. Review this PR:
+
+{{diff_or_link}}
+
+Evaluate and comment on:
+- Correctness & test coverage (missing cases?)
+- Complexity & readability
+- Performance & allocations
+- Security, privacy, and secrets handling
+- Observability (logs/metrics/traces)
+- API & schema compatibility
+Provide specific inline comments and suggested patches.
+
+Additionally check:
+- Supply chain: dependency updates, SBOM/license compliance, vulnerability scans
+- Secret scanning and config hygiene (no secrets in code or logs)
+- Backward/forward compatibility and migration safety (zero-downtime, idempotency)
+- Logging quality: structured, correlation IDs, no sensitive data in logs

@@ -1,0 +1,27 @@
+# Ignore build / cache / venv
+__pycache__/
+.venv/
+.eggs/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+
+# Ignore dbt build outputs
+target/
+dbt_packages/
+dbt_modules/
+logs/
+
+# Ignore git + IDE configs
+.git/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+ignore/*
+cli_templates_IGNORE/*
+
+.pytest_cache/*

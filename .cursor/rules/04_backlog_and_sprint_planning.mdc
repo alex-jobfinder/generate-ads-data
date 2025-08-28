@@ -1,0 +1,26 @@
+---
+name: "Backlog (Jira-Style)"
+description: "Convert subsystems into sprint-ready Jira issues."
+variables:
+  - name: subsystem_docs
+    description: "The subsystem docs produced earlier"
+  - name: sprint_length
+    description: "Sprint length in days (e.g., 14)"
+---
+Convert these subsystem docs into **Jira-style backlog items**:
+
+{{subsystem_docs}}
+
+For each item include:
+- Title
+- Description
+- Acceptance Criteria (Gherkin if useful)
+- Definition of Done (includes docs updated and telemetry shipped)
+- Dependencies
+- Estimate (S/M/L) and suggested ordering for a {{sprint_length}}-day sprint
+Keep tasks small (≤ 1–2 days each).
+
+Additionally require per item:
+- Risk label (Low/Medium/High) and mitigation/owner
+- Test coverage target and evidence (unit/integration/contract as applicable)
+- Feature flag or config toggle (if user-visible or risky)

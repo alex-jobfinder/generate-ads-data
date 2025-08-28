@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+
+# Poetry / venv
+.venv/
+poetry.lock
+
+# Logs / temp
+*.log
+*.tmp
+*.swp
+*.swo
+
+# DBT artifacts
+target/
+dbt_packages/
+dbt_modules/
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+ignore/*
+
+ads.db*
+.pytest_cache/*
