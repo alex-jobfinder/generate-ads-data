@@ -298,6 +298,21 @@ class ExtendedPerformanceMetricsBase(BaseModel):
     day_of_week: int = Field(ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
     is_business_hour: bool = Field(description="Whether this is during business hours")
     
+    # Calculated metrics
+    ctr_recalc: float | None = Field(None, description="Recalculated CTR (clicks/impressions)")
+    viewability_rate: float | None = Field(None, description="Viewability rate (viewable/impressions)")
+    audibility_rate: float | None = Field(None, description="Audibility rate (audible/impressions)")
+    video_start_rate: float | None = Field(None, description="Video start rate (starts/impressions)")
+    video_completion_rate: float | None = Field(None, description="Video completion rate (q100/starts)")
+    video_skip_rate_ext: float | None = Field(None, description="Extended video skip rate (skips/starts)")
+    qr_scan_rate: float | None = Field(None, description="QR scan rate (scans/impressions)")
+    interactive_rate: float | None = Field(None, description="Interactive engagement rate")
+    auction_win_rate: float | None = Field(None, description="Auction win rate (won/eligible)")
+    error_rate: float | None = Field(None, description="Error rate (errors/requests)")
+    timeout_rate: float | None = Field(None, description="Timeout rate (timeouts/requests)")
+    supply_funnel_efficiency: float | None = Field(None, description="Supply funnel efficiency (eligible/requests)")
+        
+    
     model_config = {"arbitrary_types_allowed": True}
 
 

@@ -469,6 +469,19 @@ class CampaignPerformance(Base):
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False, comment="Day of week (0=Monday, 6=Sunday)")
     is_business_hour: Mapped[bool] = mapped_column(Integer, nullable=False, comment="Whether this is during business hours (0/1)")
 
+    # ctr_recalc: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)")
+    # viewability_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)")
+    # audibility_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Audibility rate (audible/impressions)")
+    # video_start_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Video start rate (starts/impressions)")
+    # video_completion_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Video completion rate (q100/starts)")
+    # video_skip_rate_ext: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Extended video skip rate (skips/starts)")
+    # qr_scan_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="QR scan rate (scans/impressions)")
+    # interactive_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Interactive engagement rate")
+    # auction_win_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Auction win rate (won/eligible)")
+    # error_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Error rate (errors/requests)")
+    # timeout_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Timeout rate (timeouts/requests)")
+    # supply_funnel_efficiency: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)")
+
 """
 -- Campaign-hour performance (extended) focused on CTV/video with Netflix core metrics
 -- Grain: campaign_id × hour_ts (TZ-aware)
@@ -622,3 +635,16 @@ class CampaignPerformanceExtended(Base):
     second_of_minute: Mapped[int] = mapped_column(Integer, nullable=False, comment="Second of minute (0-59)")
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False, comment="Day of week (0=Monday, 6=Sunday)")
     is_business_hour: Mapped[bool] = mapped_column(Integer, nullable=False, comment="Whether this is during business hours (0/1)")
+
+    ctr_recalc: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)")
+    viewability_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)")
+    audibility_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Audibility rate (audible/impressions)")
+    video_start_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Video start rate (starts/impressions)")
+    video_completion_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Video completion rate (q100/starts)")
+    video_skip_rate_ext: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Extended video skip rate (skips/starts)")
+    qr_scan_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="QR scan rate (scans/impressions)")
+    interactive_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Interactive engagement rate")
+    auction_win_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Auction win rate (won/eligible)")
+    error_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Error rate (errors/requests)")
+    timeout_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Timeout rate (timeouts/requests)")
+    supply_funnel_efficiency: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)")

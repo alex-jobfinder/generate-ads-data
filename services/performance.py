@@ -270,6 +270,33 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
             reach = max(1, impressions // max(1, frequency))
 
             # Create performance row using shared utility
+            requests = int(impressions * rng.uniform(1.1, 1.8))
+            # Ensure responses >= 0.9 * requests to satisfy database constraint
+            min_responses = int(0.9 * requests) + 1  # Add 1 to ensure we're above the threshold
+            max_responses = int(1.04 * impressions)
+            responses = max(min_responses, int(impressions * rng.uniform(0.92, 1.04)))
+            
+            # Generate video quartiles in descending order to satisfy constraints
+            video_q25 = int(video_start * max(0.60, min(0.98, rng.uniform(0.70, 0.95))))
+            video_q50 = int(video_start * max(0.40, min(0.90, rng.uniform(0.55, 0.90))))
+            video_q75 = int(video_start * max(0.25, min(0.80, rng.uniform(0.40, 0.80))))
+            video_q100 = int(video_start * max(0.10, min(0.70, rng.uniform(0.25, 0.70))))
+            
+            # Ensure proper ordering: q25 >= q50 >= q75 >= q100
+            video_q50 = min(video_q50, video_q25)
+            video_q75 = min(video_q75, video_q50)
+            video_q100 = min(video_q100, video_q75)
+            
+            # Generate eligible_impressions ensuring it's at least 80% of responses
+            min_eligible = int(0.8 * responses) + 1
+            max_eligible = int(0.99 * impressions)
+            eligible_impressions = max(min_eligible, int(impressions * rng.uniform(0.85, 0.99)))
+            
+            # Generate auctions_won ensuring it's at least 80% of eligible_impressions
+            min_auctions = int(0.8 * eligible_impressions) + 1
+            max_auctions = int(1.02 * impressions)
+            auctions_won = max(min_auctions, int(impressions * rng.uniform(0.90, 1.02)))
+            
             base_fields = {
                 # Basic performance metrics
                 "impressions": impressions,
@@ -285,16 +312,16 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
                 "reach": reach,
                 
                 # Extended performance metrics (raw data only)
-                "requests": int(impressions * rng.uniform(1.1, 1.8)),
-                "responses": int(impressions * rng.uniform(0.92, 1.04)),
-                "eligible_impressions": int(impressions * rng.uniform(0.85, 0.99)),
-                "auctions_won": int(impressions * rng.uniform(0.90, 1.02)),
+                "requests": requests,
+                "responses": responses,
+                "eligible_impressions": eligible_impressions,
+                "auctions_won": auctions_won,
                 "viewable_impressions": int(impressions * max(0.70, min(0.99, rng.uniform(0.80, 0.98) * factor))),
                 "audible_impressions": int(impressions * max(0.20, min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)))),
-                "video_q25": int(video_start * max(0.60, min(0.98, rng.uniform(0.70, 0.95)))),
-                "video_q50": int(video_start * max(0.40, min(0.90, rng.uniform(0.55, 0.90)))),
-                "video_q75": int(video_start * max(0.25, min(0.80, rng.uniform(0.40, 0.80)))),
-                "video_q100": int(video_start * max(0.10, min(0.70, rng.uniform(0.25, 0.70)))),
+                "video_q25": video_q25,
+                "video_q50": video_q50,
+                "video_q75": video_q75,
+                "video_q100": video_q100,
                 "skips": int(video_start * max(0.05, min(0.60, rng.uniform(0.10, 0.40) * (2.0 - min(1.5, factor))))),
                 "qr_scans": int(impressions * rng.uniform(0.0003, 0.006)),
                 "interactive_engagements": int(impressions * rng.uniform(0.001, 0.02)),

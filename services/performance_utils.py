@@ -2,6 +2,23 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 
+def safe_div(numerator: float, denominator: float, default: float = 0.0) -> float:
+    """
+    Safely divide two numbers, returning default value if denominator is zero.
+    
+    Args:
+        numerator: The number to divide
+        denominator: The number to divide by
+        default: Value to return if denominator is zero (default: 0.0)
+        
+    Returns:
+        numerator / denominator, or default if denominator is zero
+    """
+    if denominator == 0:
+        return default
+    return numerator / denominator
+
+
 def generate_temporal_fields(hour: datetime) -> Dict[str, Any]:
     """
     Generate temporal breakdown fields for performance data.
