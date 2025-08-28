@@ -18,6 +18,27 @@ A comprehensive, production-ready platform for generating realistic Netflix ads 
 
 ## 🏗️ **Architecture Overview**
 
+### **Database Schema & Relationships**
+
+The platform creates a comprehensive database schema with realistic Netflix ads data. Here's the Entity Relationship Diagram (ERD) showing how all tables connect:
+
+![Database Entity Relationship Diagram showing table relationships](ads_db__erd_sqlite_cursor.JPG)
+
+**Key Relationships:**
+- **Advertisers** → **Campaigns** (one-to-many)
+- **Campaigns** → **Line Items** (one-to-many) 
+- **Campaigns** → **Creatives** (one-to-many)
+- **Campaigns** → **Performance** (one-to-many)
+- **Campaigns** → **Performance Extended** (one-to-many)
+
+**Table Structure:**
+- **`advertisers`**: Company information, industry, brand details
+- **`campaigns`**: Campaign objectives, budgets, targeting, status
+- **`line_items`**: Ad formats, placements, delivery settings, targeting JSON
+- **`creatives`**: Video specs, interactive elements, QA status, file properties
+- **`performance`**: Hourly metrics (impressions, clicks, spend, CTR, CPM)
+- **`performance_ext`**: Extended metrics (viewability, completion rates, supply funnel)
+
 ### **Registry Pattern (`models/registry.py`)**
 The heart of the system - a centralized registry that provides unified access to:
 - **ORM Models** - SQLAlchemy database models
@@ -162,6 +183,11 @@ For the best experience exploring your generated data, use the [SQLite3 Editor e
 - 🔍 **SQL query editor** with syntax highlighting  
 - 📈 **Data export capabilities** for further analysis
 - 🎨 **Intuitive interface** for exploring campaign performance
+
+**Database Schema:**
+- 📋 **ERD Overview**: See the [Database Schema & Relationships](#database-schema--relationships) section above for the complete Entity Relationship Diagram
+- 🔗 **Table Relationships**: Understand how advertisers, campaigns, line items, and performance data connect
+- 📊 **Data Structure**: Learn what fields are available in each table for your queries
 
 **Try these queries:**
 ```sql
