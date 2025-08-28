@@ -144,7 +144,7 @@ def cmd_create_example(template: str, example: str, seed: Optional[int] = None, 
     
     try:
         # Import the new streamlined processor
-        from services.streamlined_processor import create_example_from_template
+        from services.processor import create_example_from_template
         
         result = create_example_from_template(template, example, performance_only=performance_only)
         print(json.dumps(result, indent=2))
@@ -168,7 +168,7 @@ def cmd_test_fields(template: str, focus: str, seed: Optional[int] = None, auto_
     
     try:
         # Import the new streamlined processor
-        from services.streamlined_processor import test_specific_fields
+        from services.processor import test_specific_fields
         
         focus_fields = [f.strip() for f in focus.split(",")]
         result = test_specific_fields(template, focus_fields, auto_performance=auto_performance)
@@ -193,7 +193,7 @@ def cmd_create_profile(name: str, test_fields: Optional[str] = None, seed: Optio
     
     try:
         # Import the new streamlined processor
-        from services.streamlined_processor import create_campaign_from_profile
+        from services.processor import create_campaign_from_profile
         
         override_fields = {}
         if test_fields:
@@ -223,7 +223,7 @@ def cmd_test_scenario(name: str, seed: Optional[int] = None, log_level: Optional
     
     try:
         # Import the new streamlined processor
-        from services.streamlined_processor import test_prebuilt_scenario
+        from services.processor import test_prebuilt_scenario
         
         result = test_prebuilt_scenario(name)
         print(json.dumps(result, indent=2))

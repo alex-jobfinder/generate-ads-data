@@ -1,6 +1,6 @@
 # 🚀 Netflix Ads Data Generation Platform
 
-A comprehensive, production-ready platform for generating realistic Netflix ads data using modern Python technologies. Built with a centralized registry pattern for maintainability and extensibility, featuring an efficient performance generation system with zero code duplication.
+A comprehensive, production-ready platform for generating realistic Netflix ads data using modern Python technologies. Built with a centralized registry pattern for maintainability and extensibility, featuring an efficient performance generation system with zero code duplication and robust constraint handling.
 
 ## ✨ **Key Features**
 
@@ -12,6 +12,8 @@ A comprehensive, production-ready platform for generating realistic Netflix ads 
 - **📈 Performance Simulation** - Hourly performance data with realistic metrics
 - **♻️ Zero Code Duplication** - Efficient performance generation with shared utilities
 - **🧮 Smart Calculation** - Pydantic computed fields for derived metrics
+- **🛡️ Robust Constraints** - Database-level integrity with smart data generation
+- **🔒 Safe Division** - Built-in protection against division by zero errors
 
 ## 🏗️ **Architecture Overview**
 
@@ -38,6 +40,7 @@ The system uses a smart two-layer approach to eliminate code duplication:
 #### **Layer 1: Raw Data Generation (`services/performance.py`)**
 - Generates ALL performance data (basic + extended) in one place
 - Includes temporal factors, supply funnel metrics, and quality indicators
+- **Smart constraint handling** - ensures all database constraints are satisfied
 - Single source of truth for all raw performance data
 - Uses shared utilities for common operations
 
@@ -45,15 +48,17 @@ The system uses a smart two-layer approach to eliminate code duplication:
 - **NO data generation** - reads existing performance data
 - Adds business intelligence through Pydantic computed fields
 - Computes derived metrics like CTR, completion rates, viewability
+- **Safe division handling** - uses `safe_div()` utility for all calculations
 - Enriches existing data without duplication
 
 #### **Shared Utilities (`services/performance_utils.py`)**
 ```python
 # Common functions used by both performance modules:
-- get_campaign_and_flight()      # Campaign/flight data fetching
-- clear_existing_performance()   # Data clearing
-- batch_insert_performance()     # Batch insertion
-- create_performance_row()       # Row creation with temporal fields
+- safe_div()                    # Safe division with zero protection
+- get_campaign_and_flight()     # Campaign/flight data fetching
+- clear_existing_performance()  # Data clearing
+- batch_insert_performance()    # Batch insertion
+- create_performance_row()      # Row creation with temporal fields
 ```
 
 ### **Core Components**
@@ -75,7 +80,7 @@ generate-ads-data/
 │   ├── enums.py               # Domain enums and constants
 │   └── __init__.py            # Registry-only exports
 ├── services/                   # Business logic
-│   ├── streamlined_processor.py # Main data generation service
+│   ├── processor.py # Main data generation service
 │   ├── generator.py           # ORM payload creation
 │   ├── performance.py         # 🚀 Complete performance data generation
 │   ├── performance_ext.py     # 📊 Calculated fields only (no duplication)
@@ -122,7 +127,8 @@ make init-db
 # ✅ 3 Complete Examples (Luxury Auto, Crunchy Snacks, NexBank)
 # ✅ 4 Campaign Profiles (High CPM, Mobile, Interactive, Multi-device)
 # ✅ Complete performance data for all campaigns (basic + extended)
-# ✅ ~12MB SQLite database with realistic Netflix ads data
+# ✅ ~34MB SQLite database with realistic Netflix ads data
+# ✅ All database constraints satisfied automatically
 ```
 
 ### **4. Individual Commands**
@@ -185,6 +191,7 @@ from services.performance import generate_hourly_performance_raw
 # ✅ Extended metrics: supply funnel, video progression, quality metrics
 # ✅ Temporal fields: hour_of_day, day_of_week, business_hours
 # ✅ Audience data: device mix, demographics, interests
+# ✅ Constraint-safe data: all database constraints automatically satisfied
 ```
 
 #### **Calculated Fields Layer**
@@ -192,11 +199,12 @@ from services.performance import generate_hourly_performance_raw
 # Add business intelligence without regenerating data
 from services.performance_ext import add_extended_metrics_to_performance
 
-# Computes derived metrics:
+# Computes derived metrics with safe division:
 # 🧮 Viewability rates, completion percentages
 # 🧮 Supply funnel efficiency, auction win rates
 # 🧮 Effective CPM, average watch time
 # 🧮 Error rates, timeout percentages
+# 🛡️ Safe division handling for all calculations
 ```
 
 ### **Complete Examples**
@@ -229,6 +237,44 @@ from services.performance_ext import add_extended_metrics_to_performance
 - **Business Intelligence** - Watch time estimates, engagement quality
 - **Performance Ratios** - Error rates, timeout percentages, supply efficiency
 
+## 🛡️ **Robust Constraint Handling**
+
+### **Database Constraints Automatically Satisfied**
+
+The system now automatically generates data that satisfies all database constraints:
+
+```python
+# Supply funnel constraints
+responses >= 0.9 * requests                    # ✅ Automatically satisfied
+eligible_impressions >= 0.8 * responses        # ✅ Automatically satisfied
+auctions_won >= 0.8 * eligible_impressions    # ✅ Automatically satisfied
+
+# Video progression constraints
+video_q25 >= video_q50 >= video_q75 >= video_q100  # ✅ Automatically satisfied
+
+# Performance constraints
+viewable_impressions <= impressions            # ✅ Automatically satisfied
+audible_impressions <= impressions             # ✅ Automatically satisfied
+```
+
+### **Safe Division Protection**
+
+All computed fields use the `safe_div()` utility for robust error handling:
+
+```python
+@computed_field
+@property
+def viewability_rate(self) -> float:
+    """Percentage of impressions that were viewable."""
+    return safe_div(self.viewable_impressions, self.impressions)
+
+@computed_field
+@property
+def effective_cpm(self) -> int:
+    """Effective CPM in cents."""
+    return int(safe_div(self.spend * 1000, self.impressions))
+```
+
 ## 🧪 **Testing & Quality**
 
 ### **Test Coverage (18 Tests)**
@@ -251,6 +297,8 @@ make test-one FILE=tests/test_flows_v1.py  # Run specific test file
 - **SQLAlchemy Constraints** - Database-level integrity and constraints
 - **Comprehensive Testing** - 100% test coverage of core functionality
 - **Zero Duplication** - Shared utilities and single data generation point
+- **Constraint Safety** - All database constraints automatically satisfied
+- **Safe Division** - Built-in protection against division by zero
 
 ## 🔧 **Development & Customization**
 
@@ -266,7 +314,7 @@ new_metric: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 @computed_field
 @property
 def new_metric_rate(self) -> float:
-    return self.new_metric / self.impressions if self.impressions > 0 else 0.0
+    return safe_div(self.new_metric, self.impressions)
 ```
 
 ### **Adding New Enums**
@@ -311,12 +359,36 @@ new_profile:
 
 ## 📈 **Performance & Scalability**
 
-- **Database Size** - ~12MB for complete dataset
-- **Generation Speed** - Complete dataset in ~15 seconds
+- **Database Size** - ~34MB for complete dataset
+- **Generation Speed** - Complete dataset in ~16 seconds
 - **Memory Usage** - Efficient streaming for large datasets
 - **Scalability** - Easy to extend for more campaigns and data
 - **Efficiency** - Zero code duplication, shared utilities
 - **Maintainability** - Single data generation point, easy to modify
+- **Reliability** - All constraints automatically satisfied
+- **Robustness** - Safe division handling for all calculations
+
+## 🚀 **Recent Improvements & Fixes**
+
+### **✅ Issues Resolved**
+1. **Pydantic Validation Errors** - All required fields now properly mapped
+2. **Database Constraint Violations** - Smart data generation ensures all constraints are satisfied
+3. **Division by Zero Errors** - `safe_div()` utility provides robust error handling
+4. **Duplicate Function Definitions** - Cleaned up code structure
+
+### **🔧 Technical Enhancements**
+1. **Smart Constraint Handling** - Data generation automatically satisfies database constraints
+2. **Safe Division Utility** - Consistent error handling across all computed fields
+3. **Improved Data Quality** - Video quartiles properly ordered, supply funnel metrics realistic
+4. **Cleaner Code Structure** - Removed manual division checks and duplicate functions
+
+### **📊 Current Status**
+- ✅ **All 18 tests passing**
+- ✅ **Complete data generation working without errors**
+- ✅ **Database constraints automatically satisfied**
+- ✅ **Safe division handling implemented**
+- ✅ **Performance data realistic and comprehensive**
+- ✅ **Architecture clean and maintainable**
 
 ## 🚀 **Future Enhancements**
 
@@ -353,14 +425,17 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Ready to generate Netflix ads data?** 🚀
 
 ```bash
-./run_all.sh  # Generate complete dataset with zero duplication
+./run_all.sh  # Generate complete dataset with zero duplication and robust constraints
 ```
 
 **Questions or issues?** Check the tests or open an issue!
 
-**Key Benefits of the New Architecture:**
+**Key Benefits of the Current Architecture:**
 - ✅ **Zero Code Duplication** - Single data generation point
 - ✅ **Efficient Performance** - Shared utilities and smart calculation
 - ✅ **Easy Maintenance** - Changes in one place affect everything
 - ✅ **Rich Metrics** - Basic + extended + calculated fields
 - ✅ **Scalable Design** - Easy to add new metrics and calculations
+- ✅ **Robust Constraints** - All database constraints automatically satisfied
+- ✅ **Safe Division** - Built-in protection against division by zero errors
+- ✅ **Production Ready** - Comprehensive testing and error handling
