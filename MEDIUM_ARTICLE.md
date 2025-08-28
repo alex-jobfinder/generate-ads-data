@@ -162,6 +162,27 @@ Each campaign creates:
 
 ## 🔍 Querying Your Data
 
+### Understanding Your Database Schema
+
+Before diving into queries, let's understand the database structure. The platform creates a comprehensive schema with realistic Netflix ads data:
+
+![Database Entity Relationship Diagram showing table relationships](ads_db__erd_sqlite_cursor.JPG)
+
+**Key Table Relationships:**
+- **`advertisers`** → **`campaigns`** (one-to-many)
+- **`campaigns`** → **`line_items`** (one-to-many) 
+- **`campaigns`** → **`creatives`** (one-to-many)
+- **`campaigns`** → **`performance`** (one-to-many)
+- **`campaigns`** → **`performance_ext`** (one-to-many)
+
+**What Each Table Contains:**
+- **`advertisers`**: Company information, industry, brand details
+- **`campaigns`**: Campaign objectives, budgets, targeting, status
+- **`line_items`**: Ad formats, placements, delivery settings, targeting JSON
+- **`creatives`**: Video specs, interactive elements, QA status, file properties
+- **`performance`**: Hourly metrics (impressions, clicks, spend, CTR, CPM)
+- **`performance_ext`**: Extended metrics (viewability, completion rates, supply funnel)
+
 ### Opening Your Database in Cursor
 
 1. **Open the database file**:
