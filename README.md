@@ -14,6 +14,7 @@ A comprehensive, production-ready platform for generating realistic Netflix ads 
 - **🧮 Smart Calculation** - Pydantic computed fields for derived metrics
 - **🛡️ Robust Constraints** - Database-level integrity with smart data generation
 - **🔒 Safe Division** - Built-in protection against division by zero errors
+- **🔍 Visual Data Exploration** - SQLite3 Editor integration for easy database browsing
 
 ## 🏗️ **Architecture Overview**
 
@@ -144,6 +145,36 @@ python cli.py create-profile --name high_cpm_tv_awareness
 
 # Create from example template
 python cli.py create-example --template cli_templates/examples/netflix-ads-examples.yml --example luxury_auto_awareness
+```
+
+### **5. Explore Your Data with SQLite3 Editor**
+
+For the best experience exploring your generated data, use the [SQLite3 Editor extension](https://marketplace.cursorapi.com/items/?itemName=yy0931.vscode-sqlite3-editor) in Cursor IDE:
+
+1. **Install the extension** in Cursor (Ctrl+Shift+X → Search "SQLite3 Editor")
+2. **Open your database** by right-clicking `ads.db` → "Open With..." → "SQLite3 Editor"
+3. **Explore tables** in the left sidebar and run SQL queries
+
+![SQLite3 Editor in Cursor showing Netflix ads database](ads_db__sqlite_cursor.JPG)
+
+**What you'll see:**
+- 📊 **Visual table browsing** with sample data
+- 🔍 **SQL query editor** with syntax highlighting  
+- 📈 **Data export capabilities** for further analysis
+- 🎨 **Intuitive interface** for exploring campaign performance
+
+**Try these queries:**
+```sql
+-- Campaign overview
+SELECT c.name, c.objective, c.budget, a.industry 
+FROM campaigns c 
+JOIN advertisers a ON c.advertiser_id = a.id;
+
+-- Performance summary
+SELECT c.name, AVG(p.ctr), SUM(p.impressions) 
+FROM campaigns c 
+JOIN performance p ON c.id = p.campaign_id 
+GROUP BY c.id;
 ```
 
 ## 🎯 **Registry Pattern Benefits**
