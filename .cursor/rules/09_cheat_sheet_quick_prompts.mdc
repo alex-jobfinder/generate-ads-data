@@ -1,0 +1,36 @@
+---
+name: "Cheat Sheet: Ultra-Fast Prompts"
+description: "One-liners to drive each step without opening full templates."
+variables:
+  - name: feature
+    description: "Feature or system"
+  - name: context
+    description: "Business context"
+  - name: stack
+    description: "Tech stack"
+---
+# One-liners (paste & go)
+
+## 1) Design (concise)
+Draft a FAANG-style design for {{feature}}. Context: {{context}}. Stack: {{stack}}. Include: overview, ASCII arch, components, schemas/contracts (versioning, idempotency, pagination, rate limits, error schema), numeric non-functionals (p95 latency, throughput, availability, cost budget), security/privacy (data classification, retention), risks, rollout, success metrics. Keep under 500 words.
+
+## 2) Design Review
+Bluntly review the design above. Rank top risks (impact×likelihood), missing assumptions, data/privacy gaps, perf/scale/cost risks. Offer 2 alternative designs with trade-offs and call out required decisions + owners.
+
+## 3) Subsystems
+From the approved design, output subsystem docs (one per component): purpose, APIs (req/resp, versioning, idempotency, pagination, rate limits, error schema), models/storage, dependencies/contracts, observability (fields/metrics/spans), test strategy, ownership notes.
+
+## 4) Backlog
+Convert subsystem docs to a Jira backlog of ≤2-day items with title, description, acceptance criteria, DoD (docs+telemetry), dependencies, S/M/L estimates, risk labels, and sprint order.
+
+## 5) TDD
+Generate unit/integration/contract tests first for the critical paths and edge cases (incl. negative/abuse). Include fixtures/mocks, coverage thresholds, and perf smoke targets.
+
+## 6) Implement
+Implement to satisfy tests with clean architecture, strong typing, perf awareness, structured logging/metrics, secrets/config hygiene, and compatibility.
+
+## 7) PR Review
+Senior-level PR review: correctness, coverage, complexity, perf, security/privacy, observability, API/schema compatibility, supply chain, and secret scanning. Provide inline comments and patches.
+
+## 8) Deploy
+Staging→prod checklist with prechecks, smoke tests, canary thresholds/rollback, monitors/alerts, success/failure criteria, post-deploy verification, on-call notes.

@@ -1,0 +1,24 @@
+---
+name: "Subsystem Docs (Dev Kickoff)"
+description: "Decompose an approved design into subsystem docs."
+variables:
+  - name: design_doc
+    description: "Approved design doc or summary"
+---
+From the approved design:
+
+{{design_doc}}
+
+Produce **subsystem docs**, one per component, with:
+- Purpose & responsibilities
+- Public APIs (request/response JSON, status codes, versioning, idempotency, pagination, rate limits, error schema)
+- Data models & storage choices
+- Dependencies & contracts
+- Observability (logs, metrics, traces) with named fields/metrics and trace spans
+- Testing strategy (unit/integration/contract)
+- Ownership handoff notes
+Keep each subsystem doc compact and copy-pastable to wiki.
+
+If persistent storage is involved, include:
+- Migration/backfill plan, rollback steps, zero-downtime approach
+- Data retention/classification, access controls, and audit logging

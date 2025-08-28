@@ -1,0 +1,28 @@
+---
+name: "Staging → Production Checklist"
+description: "Deployment plan with prechecks, smoke tests, rollback, and monitoring."
+variables:
+  - name: feature
+    description: "Feature name"
+  - name: envs
+    description: "Environments (e.g., dev, staging, prod)"
+  - name: monitors
+    description: "Key dashboards/alerts/SLIs"
+---
+Create a deployment checklist for **{{feature}}** across {{envs}}.
+
+Include:
+- Pre-deployment checks (migrations, feature flags, config)
+- Smoke tests & data backfills (if any)
+- Rollout plan (canary/gradual), rollback steps
+- Monitoring & alerting: {{monitors}}
+- Success/failure criteria and on-call handoff notes
+Keep it concise and immediately actionable.
+
+Pre-deploy checklist (expand as needed):
+- Schema/migrations applied in staging; backups verified; feature flags default safe
+- Config and secrets validated; runbook and rollback documented; access reviewed
+
+Rollout safety:
+- Canary thresholds (e.g., error rate, p95 latency, saturation); auto-rollback criteria and steps
+- Post-deploy verification queries/checks and dashboards to review
