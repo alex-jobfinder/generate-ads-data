@@ -297,6 +297,96 @@ models:
           semantic:
             measure: {agg: avg}
 
+      # Video completion and engagement rates
+      - name: video_completion_rate
+        description: Video completion rate (video_q100/video_start)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      - name: video_skip_rate
+        description: Video skip rate (skips/video_start)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      - name: video_start_rate
+        description: Video start rate (video_start/impressions)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      # Supply funnel efficiency
+      - name: supply_funnel_efficiency
+        description: Supply funnel efficiency (eligible_impressions/requests)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      - name: fill_rate
+        description: Fill rate (auctions_won/eligible_impressions)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      # Response and error rates
+      - name: response_rate
+        description: Response rate (responses/requests)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      - name: error_rate
+        description: Error rate (error_count/requests)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      - name: timeout_rate
+        description: Timeout rate (timeout_count/requests)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      # Engagement rates
+      - name: qr_scan_rate
+        description: QR scan rate (qr_scans/impressions)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      - name: interactive_rate
+        description: Interactive engagement rate (interactive_engagements/impressions)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg, scale: "0-1"}
+
+      # Effective CPM
+      - name: effective_cpm
+        description: Effective CPM in cents
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg}
+
+      # Average watch time
+      - name: avg_watch_time_seconds
+        description: Average watch time in seconds (estimated from quartiles)
+        tests: [not_null]
+        meta:
+          semantic:
+            measure: {agg: avg}
+
       # Performance flags
       - name: high_ctr_flag
         description: Flag for high CTR (>= 2%)
@@ -306,8 +396,6 @@ models:
             dimension:
               kind: categorical
               note: "Performance indicator flag"
-
-
 
       - name: high_viewability_flag
         description: Flag for high viewability (>= 70%)
