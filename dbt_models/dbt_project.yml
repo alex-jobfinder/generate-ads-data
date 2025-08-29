@@ -1,0 +1,20 @@
+name: dbt_models
+# version: 1
+config-version: 2
+
+# Update this to your dbt profile name in ~/.dbt/profiles.yml
+profile: dbt_models
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+packages-install-path: "dbt_packages"
+
+seeds:
+  +quote_columns: false
+  +schema: seeds
+

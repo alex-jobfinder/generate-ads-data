@@ -1,0 +1,135 @@
+version: 2
+
+metrics:
+  - name: total_impressions
+    description: "Total number of ad impressions across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: impressions
+    
+  - name: total_clicks
+    description: "Total number of ad clicks across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: clicks
+    
+  - name: total_spend
+    description: "Total advertising spend across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: spend
+    
+  - name: overall_ctr
+    description: "Overall click-through rate across all campaigns"
+    type: ratio
+    numerator:
+      name: total_clicks
+    denominator:
+      name: total_impressions
+    expr: "{{ metric('total_clicks') }} / {{ metric('total_impressions') }}"
+    
+  - name: cost_per_click
+    description: "Average cost per click"
+    type: ratio
+    numerator:
+      name: total_spend
+    denominator:
+      name: total_clicks
+    expr: "{{ metric('total_spend') }} / {{ metric('total_clicks') }}"
+    
+  - name: cost_per_mille
+    description: "Cost per thousand impressions (CPM)"
+    type: ratio
+    numerator:
+      name: total_spend
+    denominator:
+      name: total_impressions
+    expr: "({{ metric('total_spend') }} / {{ metric('total_impressions') }}) * 1000"
+    
+  - name: total_reach
+    description: "Total unique reach across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: reach
+    
+  - name: total_requests
+    description: "Total ad requests across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: requests
+    
+  - name: total_responses
+    description: "Total ad responses across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: responses
+    
+  - name: response_rate_overall
+    description: "Overall response rate across all campaigns"
+    type: ratio
+    numerator:
+      name: total_responses
+    denominator:
+      name: total_requests
+    expr: "{{ metric('total_responses') }} / {{ metric('total_requests') }}"
+    
+  - name: total_viewable_impressions
+    description: "Total viewable impressions across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: viewable_impressions
+    
+  - name: viewability_rate
+    description: "Overall viewability rate"
+    type: ratio
+    numerator:
+      name: total_viewable_impressions
+    denominator:
+      name: total_impressions
+    expr: "{{ metric('total_viewable_impressions') }} / {{ metric('total_impressions') }}"
+    
+  - name: total_video_completions
+    description: "Total video completions (Q100)"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: video_q100
+    
+  - name: video_completion_rate_overall
+    description: "Overall video completion rate"
+    type: ratio
+    numerator:
+      name: total_video_completions
+    denominator:
+      name: total_impressions
+    expr: "{{ metric('total_video_completions') }} / {{ metric('total_impressions') }}"
+    
+  - name: total_auctions_won
+    description: "Total auctions won across all campaigns"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: auctions_won
+    
+  - name: win_rate
+    description: "Overall auction win rate"
+    type: ratio
+    numerator:
+      name: total_auctions_won
+    denominator:
+      name: total_eligible_impressions
+    expr: "{{ metric('total_auctions_won') }} / {{ metric('total_eligible_impressions') }}"
+    
+  - name: total_eligible_impressions
+    description: "Total eligible impressions for auction"
+    type: simple
+    model: ref('campaign_performance')
+    select:
+      - measure: eligible_impressions

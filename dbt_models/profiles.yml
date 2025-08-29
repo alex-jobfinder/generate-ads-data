@@ -1,0 +1,9 @@
+dbt_models:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ./dbt_models.duckdb
+      threads: 4
+
+

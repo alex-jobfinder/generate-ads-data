@@ -1,0 +1,160 @@
+version: 2
+
+semantic_models:
+  - name: campaign_performance
+    description: "Campaign performance data for advertising analytics"
+    model: ref('campaign_performance')
+    
+    entities:
+      - name: campaign_performance
+        type: primary
+        description: "Primary entity for campaign performance data"
+    
+    dimensions:
+      - name: campaign_id
+        type: categorical
+        description: "Unique identifier for each campaign"
+      
+      - name: hour_ts
+        type: time
+        description: "Timestamp for the hour of measurement"
+        type_params:
+          time_granularity: hour
+      
+      - name: hour_of_day
+        type: categorical
+        description: "Hour of the day (0-23)"
+      
+      - name: day_of_week
+        type: categorical
+        description: "Day of the week (0-6, where 0 is Monday)"
+      
+      - name: is_business_hour
+        type: categorical
+        description: "Whether the measurement occurred during business hours"
+    
+    measures:
+      - name: impressions
+        description: "Total number of ad impressions"
+        agg: sum
+        expr: impressions
+      
+      - name: clicks
+        description: "Total number of ad clicks"
+        agg: sum
+        expr: clicks
+      
+      - name: spend
+        description: "Total advertising spend"
+        agg: sum
+        expr: spend
+      
+      - name: ctr
+        description: "Click-through rate"
+        agg: avg
+        expr: ctr
+      
+      - name: completion_rate
+        description: "Video completion rate"
+        agg: avg
+        expr: completion_rate
+      
+      - name: fill_rate
+        description: "Ad fill rate"
+        agg: avg
+        expr: fill_rate
+      
+      - name: response_rate
+        description: "Ad response rate"
+        agg: avg
+        expr: response_rate
+      
+      - name: video_skip_rate
+        description: "Video skip rate"
+        agg: avg
+        expr: video_skip_rate
+      
+      - name: frequency
+        description: "Ad frequency"
+        agg: avg
+        expr: frequency
+      
+      - name: reach
+        description: "Ad reach"
+        agg: sum
+        expr: reach
+      
+      - name: requests
+        description: "Total ad requests"
+        agg: sum
+        expr: requests
+      
+      - name: responses
+        description: "Total ad responses"
+        agg: sum
+        expr: responses
+      
+      - name: eligible_impressions
+        description: "Eligible impressions for auction"
+        agg: sum
+        expr: eligible_impressions
+      
+      - name: auctions_won
+        description: "Number of auctions won"
+        agg: sum
+        expr: auctions_won
+      
+      - name: viewable_impressions
+        description: "Viewable impressions"
+        agg: sum
+        expr: viewable_impressions
+      
+      - name: audible_impressions
+        description: "Audible impressions"
+        agg: sum
+        expr: audible_impressions
+      
+      - name: video_q25
+        description: "25th percentile video completion"
+        agg: sum
+        expr: video_q25
+      
+      - name: video_q50
+        description: "50th percentile video completion"
+        agg: sum
+        expr: video_q50
+      
+      - name: video_q75
+        description: "75th percentile video completion"
+        agg: sum
+        expr: video_q75
+      
+      - name: video_q100
+        description: "100th percentile video completion"
+        agg: sum
+        expr: video_q100
+      
+      - name: skips
+        description: "Number of video skips"
+        agg: sum
+        expr: skips
+      
+      - name: qr_scans
+        description: "Number of QR code scans"
+        agg: sum
+        expr: qr_scans
+      
+      - name: interactive_engagements
+        description: "Number of interactive engagements"
+        agg: sum
+        expr: interactive_engagements
+      
+      - name: error_count
+        description: "Number of errors"
+        agg: sum
+        expr: error_count
+      
+      - name: timeout_count
+        description: "Number of timeouts"
+        agg: sum
+        expr: timeout_count
