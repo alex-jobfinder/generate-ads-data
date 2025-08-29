@@ -3,7 +3,8 @@ version: 2
 seeds:
   - name: campaign_performance
     description: |
-      Hourly campaign performance seed. Backed by the following DDL:
+      Hourly campaign performance staging table with raw data and calculated metrics.
+      Combines data from campaign_performance with computed fields from performance_ext.py.
 
       ```sql
       CREATE TABLE campaign_performance (
@@ -12,12 +13,6 @@ seeds:
         hour_ts DATETIME NOT NULL,
         impressions INTEGER NOT NULL,
         clicks INTEGER NOT NULL,
-        ctr NUMERIC(5, 4) NOT NULL,
-        completion_rate INTEGER NOT NULL,
-        render_rate NUMERIC(5, 4) NOT NULL,
-        fill_rate NUMERIC(5, 4) NOT NULL,
-        response_rate NUMERIC(5, 4) NOT NULL,
-        video_skip_rate NUMERIC(5, 4) NOT NULL,
         video_start INTEGER NOT NULL,
         frequency INTEGER NOT NULL,
         reach INTEGER NOT NULL,
@@ -44,23 +39,21 @@ seeds:
         second_of_minute INTEGER NOT NULL,
         day_of_week INTEGER NOT NULL,
         is_business_hour INTEGER NOT NULL,
+        daily_day_date DATE NOT NULL,
+        weekly_start_day_date DATE NOT NULL,
+        monthly_start_day_date DATE NOT NULL,
         PRIMARY KEY (id)
       );
       ```
 
     config:
+      strict_mode: false
       column_types:
         id: INTEGER
         campaign_id: INTEGER
         hour_ts: DATETIME
         impressions: INTEGER
         clicks: INTEGER
-        ctr: NUMERIC(5, 4)
-        completion_rate: INTEGER
-        render_rate: NUMERIC(5, 4)
-        fill_rate: NUMERIC(5, 4)
-        response_rate: NUMERIC(5, 4)
-        video_skip_rate: NUMERIC(5, 4)
         video_start: INTEGER
         frequency: INTEGER
         reach: INTEGER
@@ -87,6 +80,9 @@ seeds:
         second_of_minute: INTEGER
         day_of_week: INTEGER
         is_business_hour: INTEGER
+        daily_day_date: DATE
+        weekly_start_day_date: DATE
+        monthly_start_day_date: DATE
 
     columns:
       - name: id
@@ -134,60 +130,6 @@ seeds:
         meta:
           semantic:
             measure: {agg: sum}
-
-      - name: ctr
-        description: Click-through rate
-        tests:
-          - not_null
-          - dbt_utils.accepted_range: {min_value: 0, max_value: 1}
-        meta:
-          semantic:
-            measure: {agg: avg, scale: "0-1"}
-
-      - name: completion_rate
-        description: Video completion rate (percentage integer)
-        tests:
-          - not_null
-          - dbt_utils.accepted_range: {min_value: 0, max_value: 100}
-        meta:
-          semantic:
-            measure: {agg: avg, scale: "0-100"}
-
-      - name: render_rate
-        description: Render rate
-        tests:
-          - not_null
-          - dbt_utils.accepted_range: {min_value: 0, max_value: 1}
-        meta:
-          semantic:
-            measure: {agg: avg, scale: "0-1"}
-
-      - name: fill_rate
-        description: Fill rate
-        tests:
-          - not_null
-          - dbt_utils.accepted_range: {min_value: 0, max_value: 1}
-        meta:
-          semantic:
-            measure: {agg: avg, scale: "0-1"}
-
-      - name: response_rate
-        description: Response rate
-        tests:
-          - not_null
-          - dbt_utils.accepted_range: {min_value: 0, max_value: 1}
-        meta:
-          semantic:
-            measure: {agg: avg, scale: "0-1"}
-
-      - name: video_skip_rate
-        description: Video skip rate
-        tests:
-          - not_null
-          - dbt_utils.accepted_range: {min_value: 0, max_value: 1}
-        meta:
-          semantic:
-            measure: {agg: avg, scale: "0-1"}
 
       - name: video_start
         description: Count of video starts
@@ -422,4 +364,34 @@ seeds:
           semantic:
             dimension:
               kind: categorical
+              is_partition: true
+
+      - name: daily_day_date
+        description: Date of the hour_ts (for daily aggregation)
+        tests: [not_null]
+        meta:
+          semantic:
+            dimension:
+              kind: time
+              granularity: day
+              is_partition: true
+
+      - name: weekly_start_day_date
+        description: First day of week containing hour_ts (Monday)
+        tests: [not_null]
+        meta:
+          semantic:
+            dimension:
+              kind: time
+              granularity: week
+              is_partition: true
+
+      - name: monthly_start_day_date
+        description: First day of month containing hour_ts
+        tests: [not_null]
+        meta:
+          semantic:
+            dimension:
+              kind: time
+              granularity: month
               is_partition: true

@@ -4,5 +4,5 @@ default:
       type: duckdb
       path: dbt.duckdb
       schema: main
-      threads: 4
+      threads: 1
   target: dev
