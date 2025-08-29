@@ -1,0 +1,38 @@
+version: 2
+
+semantic_models:
+  - name: orders_semantic
+    model: ref('orders')
+    defaults:
+      agg_time_dimension: order_date
+    entities:
+      - name: order
+        type: primary
+        expr: order_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+    dimensions:
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: customer_id
+        type: categorical
+    measures:
+      - name: order_amount
+        agg: sum
+        expr: amount
+
+# Time spine configuration required by semantic layer
+models:
+  - name: time_spine
+    description: Daily time spine required by dbt semantic layer
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        description: Date column for time spine
+        tests:
+          - not_null
+        granularity: day
