@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict
 
 
@@ -29,6 +29,18 @@ def generate_temporal_fields(hour: datetime) -> Dict[str, Any]:
     Returns:
         Dictionary containing all temporal fields
     """
+    from datetime import date
+    
+    # Calculate date fields
+    daily_day_date = hour.date()
+    
+    # Calculate weekly start date (Monday)
+    days_since_monday = hour.weekday()  # Monday=0, Sunday=6
+    weekly_start_day_date = daily_day_date - timedelta(days=days_since_monday)
+    
+    # Calculate monthly start date (first day of month)
+    monthly_start_day_date = date(hour.year, hour.month, 1)
+    
     return {
         "human_readable": hour.strftime("%Y-%m-%d %H:%M:%S %Z"),
         "hour_of_day": hour.hour,
@@ -36,6 +48,9 @@ def generate_temporal_fields(hour: datetime) -> Dict[str, Any]:
         "second_of_minute": hour.second,
         "day_of_week": hour.weekday(),  # Monday=0, Sunday=6
         "is_business_hour": 1 if 9 <= hour.hour <= 17 and hour.weekday() < 5 else 0,
+        "daily_day_date": daily_day_date,
+        "weekly_start_day_date": weekly_start_day_date,
+        "monthly_start_day_date": monthly_start_day_date,
     }
 
 

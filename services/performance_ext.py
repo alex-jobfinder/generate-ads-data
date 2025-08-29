@@ -1,7 +1,7 @@
 # performance_ext.py
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from typing import Optional
 
 from pydantic import BaseModel, computed_field
@@ -46,12 +46,6 @@ class ExtendedPerformanceMetrics(BaseModel):
     hour_ts: datetime
     impressions: int
     clicks: int
-    ctr: float
-    completion_rate: int
-    render_rate: float
-    fill_rate: float
-    response_rate: float
-    video_skip_rate: float
     video_start: int
     frequency: int
     reach: int
@@ -82,6 +76,11 @@ class ExtendedPerformanceMetrics(BaseModel):
     second_of_minute: int
     day_of_week: int
     is_business_hour: bool
+    
+    # Date aggregation fields
+    daily_day_date: date
+    weekly_start_day_date: date
+    monthly_start_day_date: date
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -196,6 +195,50 @@ class ExtendedPerformanceMetrics(BaseModel):
         """Recalculated CTR (clicks/impressions)."""
         return safe_div(self.clicks, self.impressions)
 
+    @computed_field
+    @property
+    def ctr(self) -> float:
+        """CTR: sum(clicks) / sum(impressions)."""
+        return safe_div(self.clicks, self.impressions)
+
+    @computed_field
+    @property
+    def completion_rate(self) -> float:
+        """Completion rate: sum(video_q100) / NULLIF(sum(video_start), 0) (0-1 ratio)."""
+        if self.video_start == 0:
+            return 0.0
+        return self.video_q100 / self.video_start
+
+    @computed_field
+    @property
+    def render_rate(self) -> float:
+        """Render rate: sum(viewable_impressions) / sum(impressions) (proxy)."""
+        return safe_div(self.viewable_impressions, self.impressions)
+
+    @computed_field
+    @property
+    def fill_rate(self) -> float:
+        """Fill rate: sum(auctions_won) / NULLIF(sum(eligible_impressions), 0)."""
+        if self.eligible_impressions == 0:
+            return 0.0
+        return self.auctions_won / self.eligible_impressions
+
+    @computed_field
+    @property
+    def response_rate(self) -> float:
+        """Response rate: sum(responses) / NULLIF(sum(requests), 0)."""
+        if self.requests == 0:
+            return 0.0
+        return self.responses / self.requests
+
+    @computed_field
+    @property
+    def video_skip_rate(self) -> float:
+        """Video skip rate: sum(skips) / NULLIF(sum(video_start), 0)."""
+        if self.video_start == 0:
+            return 0.0
+        return self.skips / self.video_start
+
 
 def add_extended_metrics_to_performance(campaign_id: int) -> int:
     """
@@ -229,12 +272,6 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
                     "hour_ts": raw_row.hour_ts,
                     "impressions": raw_row.impressions,
                     "clicks": raw_row.clicks,
-                    "ctr": raw_row.ctr,
-                    "completion_rate": raw_row.completion_rate,
-                    "render_rate": raw_row.render_rate,
-                    "fill_rate": raw_row.fill_rate,
-                    "response_rate": raw_row.response_rate,
-                    "video_skip_rate": raw_row.video_skip_rate,
                     "video_start": raw_row.video_start,
                     "frequency": raw_row.frequency,
                     "reach": raw_row.reach,
@@ -260,6 +297,9 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
                     "second_of_minute": raw_row.second_of_minute,
                     "day_of_week": raw_row.day_of_week,
                     "is_business_hour": raw_row.is_business_hour,
+                    "daily_day_date": raw_row.daily_day_date,
+                    "weekly_start_day_date": raw_row.weekly_start_day_date,
+                    "monthly_start_day_date": raw_row.monthly_start_day_date,
                     "human_readable": raw_row.human_readable,
                 }
             )
@@ -319,8 +359,17 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
                 second_of_minute=raw_row.second_of_minute,
                 day_of_week=raw_row.day_of_week,
                 is_business_hour=raw_row.is_business_hour,
-                # Calculated fields
+                daily_day_date=raw_row.daily_day_date,
+                weekly_start_day_date=raw_row.weekly_start_day_date,
+                monthly_start_day_date=raw_row.monthly_start_day_date,
+                # Calculated fields - now using the new computed properties
                 ctr_recalc=extended_metrics.ctr_recalc,
+                ctr=extended_metrics.ctr,
+                completion_rate=extended_metrics.completion_rate,
+                render_rate=extended_metrics.render_rate,
+                fill_rate=extended_metrics.fill_rate,
+                response_rate=extended_metrics.response_rate,
+                video_skip_rate=extended_metrics.video_skip_rate,
                 viewability_rate=extended_metrics.viewability_rate,
                 audibility_rate=extended_metrics.audibility_rate,
                 video_start_rate=extended_metrics.video_start_rate,

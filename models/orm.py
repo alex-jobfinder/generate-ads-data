@@ -287,13 +287,6 @@ Index("ix_creatives_file_format_mime_type", Creative.file_format, Creative.mime_
 class CampaignPerformance(Base):
     __tablename__ = "campaign_performance"
     __table_args__ = (
-        # Ensure rates are within valid ranges
-        CheckConstraint("ctr >= 0.0 AND ctr <= 1.0", name="ck_cp_ctr_range"),
-        CheckConstraint("render_rate >= 0.0 AND render_rate <= 1.0", name="ck_cp_render_rate_range"),
-        CheckConstraint("fill_rate >= 0.0 AND fill_rate <= 1.0", name="ck_cp_fill_rate_range"),
-        CheckConstraint("response_rate >= 0.0 AND response_rate <= 1.0", name="ck_cp_response_rate_range"),
-        CheckConstraint("video_skip_rate >= 0.0 AND video_skip_rate <= 1.0", name="ck_cp_skip_rate_range"),
-        CheckConstraint("completion_rate >= 0 AND completion_rate <= 100", name="ck_cp_completion_range"),
         # Ensure counts are non-negative
         CheckConstraint("impressions >= 0", name="ck_cp_impressions_nonneg"),
         CheckConstraint("clicks >= 0", name="ck_cp_clicks_nonneg"),
@@ -314,22 +307,6 @@ class CampaignPerformance(Base):
     hour_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     impressions: Mapped[int] = mapped_column(Integer, nullable=False)
     clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    ctr: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Click-through rate as decimal (0.0000-1.0000)
-    completion_rate: Mapped[int] = mapped_column(Integer, nullable=False)  # store as percentage 0..100
-    render_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Render rate as decimal (0.0000-1.0000)
-    fill_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Fill rate as decimal (0.0000-1.0000)
-    response_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Response rate as decimal (0.0000-1.0000)
-    video_skip_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Video skip rate as decimal (0.0000-1.0000)
     video_start: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # Video start count
     frequency: Mapped[int] = mapped_column(Integer, nullable=False)
     reach: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -377,6 +354,11 @@ class CampaignPerformance(Base):
     is_business_hour: Mapped[bool] = mapped_column(
         Integer, nullable=False, comment="Whether this is during business hours (0/1)"
     )
+    
+    # Date aggregation columns
+    daily_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="Date of the hour_ts (for daily aggregation)")
+    weekly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of week containing hour_ts (Monday)")
+    monthly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of month containing hour_ts")
 
     # ctr_recalc: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)")
     # viewability_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)")
@@ -423,6 +405,42 @@ CREATE TABLE campaign_performance_extended (
 	error_count INTEGER NOT NULL, -- Player/serve errors
 	timeout_count INTEGER NOT NULL, -- Request timeouts
 	comment TEXT, -- Additional notes or metadata about the campaign performance data
+	
+	-- Calculated rate fields (ratios 0-1)
+	ctr_recalc NUMERIC(5, 4), -- Recalculated CTR (clicks/impressions)
+	viewability_rate NUMERIC(5, 4), -- Viewability rate (viewable/impressions)
+	audibility_rate NUMERIC(5, 4), -- Audibility rate (audible/impressions)
+	video_start_rate NUMERIC(5, 4), -- Video start rate (starts/impressions)
+	video_completion_rate NUMERIC(5, 4), -- Video completion rate (q100/starts) - ratio 0-1
+	video_skip_rate_ext NUMERIC(5, 4), -- Extended video skip rate (skips/starts)
+	qr_scan_rate NUMERIC(5, 4), -- QR scan rate (scans/impressions)
+	interactive_rate NUMERIC(5, 4), -- Interactive engagement rate
+	auction_win_rate NUMERIC(5, 4), -- Auction win rate (won/eligible)
+	error_rate NUMERIC(5, 4), -- Error rate (errors/requests)
+	timeout_rate NUMERIC(5, 4), -- Timeout rate (timeouts/requests)
+	supply_funnel_efficiency NUMERIC(5, 4), -- Supply funnel efficiency (eligible/requests)
+	
+	-- Core calculated metrics (ratios 0-1)
+	ctr NUMERIC(5, 4), -- CTR: sum(clicks) / sum(impressions) - ratio 0-1
+	completion_rate NUMERIC(5, 4), -- Completion rate: sum(video_q100) / NULLIF(sum(video_start), 0) (0-1 ratio)
+	render_rate NUMERIC(5, 4), -- Render rate: sum(viewable_impressions) / sum(impressions) - ratio 0-1
+	fill_rate NUMERIC(5, 4), -- Fill rate: sum(auctions_won) / NULLIF(sum(eligible_impressions), 0) - ratio 0-1
+	response_rate NUMERIC(5, 4), -- Response rate: sum(responses) / NULLIF(sum(requests), 0) - ratio 0-1
+	video_skip_rate NUMERIC(5, 4), -- Video skip rate: sum(skips) / NULLIF(sum(video_start), 0) - ratio 0-1
+	
+	-- Temporal breakdown columns
+	human_readable TEXT NOT NULL, -- Human-readable timestamp string
+	hour_of_day INTEGER NOT NULL, -- Hour of day (0-23)
+	minute_of_hour INTEGER NOT NULL, -- Minute of hour (0-59)
+	second_of_minute INTEGER NOT NULL, -- Second of minute (0-59)
+	day_of_week INTEGER NOT NULL, -- Day of week (0=Monday, 6=Sunday)
+	is_business_hour INTEGER NOT NULL, -- Whether this is during business hours (0/1)
+	
+	-- Date aggregation columns
+	daily_day_date DATE NOT NULL, -- Date of the hour_ts (for daily aggregation)
+	weekly_start_day_date DATE NOT NULL, -- First day of week containing hour_ts (Monday)
+	monthly_start_day_date DATE NOT NULL, -- First day of month containing hour_ts
+	
 	PRIMARY KEY (id),
 	CONSTRAINT ck_cpe_supply_nonneg CHECK (requests >= 0 AND responses >= 0 AND eligible_impressions >= 0 AND auctions_won >= 0),
 	CONSTRAINT ck_cpe_imps_nonneg CHECK (impressions >= 0 AND viewable_impressions >= 0 AND audible_impressions >= 0),
@@ -586,6 +604,11 @@ class CampaignPerformanceExtended(Base):
     is_business_hour: Mapped[bool] = mapped_column(
         Integer, nullable=False, comment="Whether this is during business hours (0/1)"
     )
+    
+    # Date aggregation columns
+    daily_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="Date of the hour_ts (for daily aggregation)")
+    weekly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of week containing hour_ts (Monday)")
+    monthly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of month containing hour_ts")
 
     ctr_recalc: Mapped[float | None] = mapped_column(
         Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)"
@@ -622,4 +645,24 @@ class CampaignPerformanceExtended(Base):
     )
     supply_funnel_efficiency: Mapped[float | None] = mapped_column(
         Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)"
+    )
+
+    # Core calculated metrics (moved from CampaignPerformance)
+    ctr: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="CTR: sum(clicks) / sum(impressions)"
+    )
+    completion_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Completion rate: sum(video_q100) / NULLIF(sum(video_start), 0) (0-1 ratio)"
+    )
+    render_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Render rate: sum(viewable_impressions) / sum(impressions)"
+    )
+    fill_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Fill rate: sum(auctions_won) / NULLIF(sum(eligible_impressions), 0)"
+    )
+    response_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Response rate: sum(responses) / NULLIF(sum(requests), 0)"
+    )
+    video_skip_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Video skip rate: sum(skips) / NULLIF(sum(video_start), 0)"
     )

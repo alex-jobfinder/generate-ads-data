@@ -214,7 +214,7 @@ class PerformanceMetricsBase(BaseModel):
     impressions: int = Field(ge=0, description="Total ad impressions served")
     clicks: int = Field(ge=0, description="Total click-through interactions")
     ctr: float = Field(ge=0.0, le=1.0, description="Click-through rate (0.0-1.0)")
-    completion_rate: int = Field(ge=0, le=100, description="Video completion rate as percentage (0-100)")
+    completion_rate: float = Field(ge=0.0, le=1.0, description="Video completion rate as ratio (0-1)")
     render_rate: float = Field(ge=0.0, le=1.0, description="Render rate (0.0-1.0)")
     fill_rate: float = Field(ge=0.0, le=1.0, description="Fill rate (0.0-1.0)")
     response_rate: float = Field(ge=0.0, le=1.0, description="Response rate (0.0-1.0)")
