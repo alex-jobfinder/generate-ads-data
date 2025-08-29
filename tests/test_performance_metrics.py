@@ -93,7 +93,7 @@ def test_performance_metrics_generation() -> None:
             assert perf.impressions > 0
             assert perf.clicks >= 0
             assert 0.0 <= perf.ctr <= 0.05  # CTR should be 0-5%
-            assert 0 <= perf.completion_rate <= 100
+            assert 0 <= perf.completion_rate <= 1  # Completion rate should be 0-1 ratio
             assert 0.0 <= perf.render_rate <= 1.0
             assert 0.0 <= perf.fill_rate <= 1.0
             assert 0.0 <= perf.response_rate <= 1.0
@@ -113,8 +113,8 @@ def test_performance_metrics_generation() -> None:
                 start_rate = perf.video_start / perf.impressions
                 assert 0.7 <= start_rate <= 0.99  # 70-99% of impressions should start video
 
-            # Verify completion rate is percentage
-            assert 0 <= perf.completion_rate <= 100
+            # Verify completion rate is ratio (0-1)
+            assert 0 <= perf.completion_rate <= 1
 
             # Verify frequency and reach relationship
             assert perf.frequency >= 1

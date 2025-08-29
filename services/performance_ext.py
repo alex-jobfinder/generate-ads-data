@@ -204,10 +204,10 @@ class ExtendedPerformanceMetrics(BaseModel):
     @computed_field
     @property
     def completion_rate(self) -> float:
-        """Completion rate: sum(video_q100) / NULLIF(sum(video_start), 0) × 100."""
+        """Completion rate: sum(video_q100) / NULLIF(sum(video_start), 0) (0-1 ratio)."""
         if self.video_start == 0:
             return 0.0
-        return (self.video_q100 / self.video_start) * 100
+        return self.video_q100 / self.video_start
 
     @computed_field
     @property
