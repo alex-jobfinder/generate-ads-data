@@ -9,7 +9,7 @@ readme = "README.md"
 python = ">=3.10,<3.13"
 click = "^8.1.0"
 sqlalchemy = "^2.0.0"
-pydantic = "^2.0.0"
+pydantic = {extras = ["email"], version = "^2.11.7"}
 faker = "^20.0.0"
 rich = "^13.0.0"
 colorlog = "^6.8.0"

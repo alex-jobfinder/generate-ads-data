@@ -118,173 +118,140 @@ def _hours_between(start_dt: datetime, end_dt: datetime) -> Iterable[datetime]:
         yield current
         current = current + timedelta(hours=1)
 
-
 def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, replace: bool = True) -> int:
-    """Generate hourly performance for a campaign across its flight window.
-
-    This function generates ONLY raw data - no calculated fields like CTR, rates, etc.
-    All derived metrics should be computed using Pydantic models elsewhere.
-
-    Behavior:
-    - Creates one row per hour between flight start and end (inclusive).
-    - Stores `hour_ts` as UTC hour boundary.
-    - Generates raw counts and values only.
-    - Impressions and related metrics are boosted using temporal factors.
-
-    Args:
-        campaign_id: Target campaign identifier to generate data for.
-        seed: Optional RNG seed to make results reproducible.
-        replace: If True, delete prior rows for the campaign before insert.
-
-    Returns:
-        Count of rows written for this campaign.
-    """
+    """Generate hourly performance for a campaign across its flight window (RAW first, then calculated)."""
     rng = Random(seed)
-    timestamp_generator = TimestampDataGenerator()
+    ts = TimestampDataGenerator()
 
     with session_scope() as s:
-        # Get campaign and flight data using shared utility
         camp, flight = get_campaign_and_flight(s, campaign_id)
         if camp is None or flight is None:
             return 0
 
-        # Align bounds to whole hours in UTC. Start at 00:00, end at last full hour.
         start_dt = datetime.combine(flight.start_date, datetime.min.time(), tzinfo=timezone.utc)
         end_dt = datetime.combine(flight.end_date, datetime.max.time(), tzinfo=timezone.utc).replace(
             minute=0, second=0, microsecond=0
         )
 
         if replace:
-            # Clear any previous synthetic rows for idempotent re-generation.
             clear_existing_performance(s, registry.CampaignPerformance, campaign_id)
 
         rows = 0
-        all_rows = []  # Collect all rows for batch insert
-        for hour in _hours_between(start_dt, end_dt):
-            # Calculate temporal factors using the generator
-            factor = timestamp_generator.calculate_temporal_factor(start_dt, hour, end_dt)
+        all_rows = []
 
-            # ===== RAW DATA GENERATION ONLY =====
-            # Base draws provide variability, then scale by combined factor.
+        for hour in _hours_between(start_dt, end_dt):
+            factor = ts.calculate_temporal_factor(start_dt, hour, end_dt)
+
+            # -----------------------------
+            # 1) PURE SUMS / COUNTS (RAW)
+            # -----------------------------
             base_impressions = rng.randint(1000, 10000)
             impressions = int(max(1, base_impressions * factor))
 
-            # Generate raw click count (not CTR)
-            base_ctr = rng.uniform(0.001, 0.02)  # 0.1% to 2%
-            ctr_variance = rng.uniform(0.8, 1.2)  # ±20% variation
-            raw_ctr = min(0.05, max(0.0001, base_ctr * ctr_variance * factor))  # Cap at 5%
+            # clicks driven by a latent click-propensity (rate) but stored as a count
+            base_ctr = rng.uniform(0.001, 0.02)            # latent
+            ctr_variance = rng.uniform(0.8, 1.2)           # latent
+            raw_ctr = min(0.05, max(0.0001, base_ctr * ctr_variance * factor))  # latent
             clicks = max(0, int(impressions * raw_ctr))
 
-            # Generate raw completion count (not rate)
-            base_completion = rng.randint(70, 98)
-            completion_bump = int(4 * min(1.0, max(0.0, factor - 1.0)))
-            completion_count = min(98, base_completion + completion_bump)
-
-            # Generate raw render count (not rate)
-            base_render = rng.uniform(0.95, 0.99)
-            render_factor = min(0.999, max(0.90, base_render * factor))
-
-            # Generate raw fill count (not rate)
-            base_fill = rng.uniform(0.85, 0.98)
-            fill_factor = min(0.999, max(0.80, base_fill * factor))
-
-            # Generate raw response count (not rate)
-            base_response = rng.uniform(0.01, 0.05)
-            response_factor = min(0.10, max(0.001, base_response * factor))
-
-            # Generate raw video skip count (not rate)
-            base_skip = rng.uniform(0.10, 0.40)
-            skip_factor = min(0.60, max(0.05, base_skip * (2.0 - factor)))  # Better performance = lower skip rate
-
-            # Generate raw video start count (not rate)
-            base_start_rate = rng.uniform(0.80, 0.95)
-            start_factor = min(0.99, max(0.70, base_start_rate * factor))
+            # video starts (count)
+            base_start_rate = rng.uniform(0.80, 0.95)      # latent
+            start_factor = min(0.99, max(0.70, base_start_rate * factor))       # latent
             video_start = max(0, int(impressions * start_factor))
 
-            # Generate raw frequency and reach
+            # quartiles (counts; enforce q25 >= q50 >= q75 >= q100)
+            q25 = int(video_start * max(0.60, min(0.98, rng.uniform(0.70, 0.95))))
+            q50 = int(video_start * max(0.40, min(0.90, rng.uniform(0.55, 0.90))))
+            q75 = int(video_start * max(0.25, min(0.80, rng.uniform(0.40, 0.80))))
+            q100 = int(video_start * max(0.10, min(0.70, rng.uniform(0.25, 0.70))))
+            q50 = min(q50, q25); q75 = min(q75, q50); q100 = min(q100, q75)
+
+            # requests/responses (counts)
+            requests = int(impressions * rng.uniform(1.1, 1.8))
+            min_responses = int(0.9 * requests) + 1
+            responses = max(min_responses, int(impressions * rng.uniform(0.92, 1.04)))
+
+            # eligible / auctions won (counts)
+            min_eligible = int(0.8 * responses) + 1
+            eligible_impressions = max(min_eligible, int(impressions * rng.uniform(0.85, 0.99)))
+            min_auctions = int(0.8 * eligible_impressions) + 1
+            auctions_won = max(min_auctions, int(impressions * rng.uniform(0.90, 1.02)))
+
+            # viewable / audible impressions (counts)
+            viewable_impressions = int(
+                impressions * max(0.70, min(0.99, rng.uniform(0.80, 0.98) * factor))
+            )
+            audible_impressions = int(
+                impressions
+                * max(0.20, min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)))
+            )
+
+            # engagement-esque counts
+            skips = int(video_start * max(0.05, min(0.60, rng.uniform(0.10, 0.40) * (2.0 - min(1.5, factor)))))
+            qr_scans = int(impressions * rng.uniform(0.0003, 0.006))
+            interactive_engagements = int(impressions * rng.uniform(0.001, 0.02))
+
+            # money / reliability counts
+            spend = int(
+                (impressions * rng.randint(1200, 4500) * rng.uniform(0.9, 1.1) * (0.95 + 0.1 * min(1.5, factor))) // 1000
+            )
+            error_count = int(impressions * rng.uniform(0.0005, 0.004))
+            timeout_count = int(impressions * rng.uniform(0.0005, 0.003))
+
+            # frequency / reach (counts)
             base_frequency = rng.randint(1, 4)
             frequency = max(1, min(5, int(round(base_frequency * (1.0 + 0.15 * max(0.0, factor - 1.0))))))
             reach = max(1, impressions // max(1, frequency))
 
-            # Create performance row using shared utility
-            requests = int(impressions * rng.uniform(1.1, 1.8))
-            # Ensure responses >= 0.9 * requests to satisfy database constraint
-            min_responses = int(0.9 * requests) + 1  # Add 1 to ensure we're above the threshold
-            responses = max(min_responses, int(impressions * rng.uniform(0.92, 1.04)))
+            # -----------------------------
+            # 2) CALCULATED / RATIO FIELDS - REMOVED
+            #    These metrics are now computed in performance_ext.py using the formulas:
+            #    - ctr: sum(clicks) / sum(impressions)
+            #    - completion_rate: sum(video_q100) / NULLIF(sum(video_start), 0) × 100
+            #    - render_rate: sum(viewable_impressions) / sum(impressions) (proxy)
+            #    - fill_rate: sum(auctions_won) / NULLIF(sum(eligible_impressions), 0)
+            #    - response_rate: sum(responses) / NULLIF(sum(requests), 0)
+            #    - video_skip_rate: sum(skips) / NULLIF(sum(video_start), 0)
+            # -----------------------------
 
-            # Generate video quartiles in descending order to satisfy constraints
-            video_q25 = int(video_start * max(0.60, min(0.98, rng.uniform(0.70, 0.95))))
-            video_q50 = int(video_start * max(0.40, min(0.90, rng.uniform(0.55, 0.90))))
-            video_q75 = int(video_start * max(0.25, min(0.80, rng.uniform(0.40, 0.80))))
-            video_q100 = int(video_start * max(0.10, min(0.70, rng.uniform(0.25, 0.70))))
-
-            # Ensure proper ordering: q25 >= q50 >= q75 >= q100
-            video_q50 = min(video_q50, video_q25)
-            video_q75 = min(video_q75, video_q50)
-            video_q100 = min(video_q100, video_q75)
-
-            # Generate eligible_impressions ensuring it's at least 80% of responses
-            min_eligible = int(0.8 * responses) + 1
-            eligible_impressions = max(min_eligible, int(impressions * rng.uniform(0.85, 0.99)))
-
-            # Generate auctions_won ensuring it's at least 80% of eligible_impressions
-            min_auctions = int(0.8 * eligible_impressions) + 1
-            auctions_won = max(min_auctions, int(impressions * rng.uniform(0.90, 1.02)))
+            # audience mix (json)
+            audience_json = json.dumps(_audience_mix(rng, hour, impressions))
 
             base_fields = {
-                # Basic performance metrics
+                # ---- SUMS / COUNTS ----
                 "impressions": impressions,
                 "clicks": clicks,
-                "ctr": raw_ctr,  # This is already a rate (0.0-0.05)
-                "completion_rate": completion_count,  # This is a percentage (0-100)
-                "render_rate": render_factor,  # This is already a rate (0.0-1.0)
-                "fill_rate": fill_factor,  # This is already a rate (0.0-1.0)
-                "response_rate": response_factor,  # This is already a rate (0.0-1.0)
-                "video_skip_rate": skip_factor,  # This is already a rate (0.0-1.0)
                 "video_start": video_start,
-                "frequency": frequency,
-                "reach": reach,
-                # Extended performance metrics (raw data only)
+                "video_q25": q25,
+                "video_q50": q50,
+                "video_q75": q75,
+                "video_q100": q100,
                 "requests": requests,
                 "responses": responses,
                 "eligible_impressions": eligible_impressions,
                 "auctions_won": auctions_won,
-                "viewable_impressions": int(impressions * max(0.70, min(0.99, rng.uniform(0.80, 0.98) * factor))),
-                "audible_impressions": int(
-                    impressions
-                    * max(
-                        0.20,
-                        min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)),
-                    )
-                ),
-                "video_q25": video_q25,
-                "video_q50": video_q50,
-                "video_q75": video_q75,
-                "video_q100": video_q100,
-                "skips": int(video_start * max(0.05, min(0.60, rng.uniform(0.10, 0.40) * (2.0 - min(1.5, factor))))),
-                "qr_scans": int(impressions * rng.uniform(0.0003, 0.006)),
-                "interactive_engagements": int(impressions * rng.uniform(0.001, 0.02)),
-                "spend": int(
-                    (impressions * rng.randint(1200, 4500) * rng.uniform(0.9, 1.1) * (0.95 + 0.1 * min(1.5, factor)))
-                    // 1000
-                ),
-                "error_count": int(impressions * rng.uniform(0.0005, 0.004)),
-                "timeout_count": int(impressions * rng.uniform(0.0005, 0.003)),
+                "viewable_impressions": viewable_impressions,
+                "audible_impressions": audible_impressions,
+                "skips": skips,
+                "qr_scans": qr_scans,
+                "interactive_engagements": interactive_engagements,
+                "spend": spend,
+                "error_count": error_count,
+                "timeout_count": timeout_count,
+                "frequency": frequency,
+                "reach": reach,
+
+                # ---- METADATA ----
+                "audience_json": audience_json,
             }
 
-            # Optional: enrich with audience composition reflecting simple preferences
-            audience_data = _audience_mix(rng, hour, impressions)
-            base_fields["audience_json"] = json.dumps(audience_data)
-
             perf = create_performance_row(registry.CampaignPerformance, campaign_id, hour, base_fields)
-
-            all_rows.append(perf)  # Collect instead of immediate add
+            all_rows.append(perf)
             rows += 1
 
-        # Batch insert all rows at once for better SQLite performance
         batch_insert_performance(s, all_rows)
-
         return rows
+
 
 
 def _audience_mix(rng: Random, dt: datetime, impressions: int) -> dict:

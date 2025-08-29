@@ -287,13 +287,6 @@ Index("ix_creatives_file_format_mime_type", Creative.file_format, Creative.mime_
 class CampaignPerformance(Base):
     __tablename__ = "campaign_performance"
     __table_args__ = (
-        # Ensure rates are within valid ranges
-        CheckConstraint("ctr >= 0.0 AND ctr <= 1.0", name="ck_cp_ctr_range"),
-        CheckConstraint("render_rate >= 0.0 AND render_rate <= 1.0", name="ck_cp_render_rate_range"),
-        CheckConstraint("fill_rate >= 0.0 AND fill_rate <= 1.0", name="ck_cp_fill_rate_range"),
-        CheckConstraint("response_rate >= 0.0 AND response_rate <= 1.0", name="ck_cp_response_rate_range"),
-        CheckConstraint("video_skip_rate >= 0.0 AND video_skip_rate <= 1.0", name="ck_cp_skip_rate_range"),
-        CheckConstraint("completion_rate >= 0 AND completion_rate <= 100", name="ck_cp_completion_range"),
         # Ensure counts are non-negative
         CheckConstraint("impressions >= 0", name="ck_cp_impressions_nonneg"),
         CheckConstraint("clicks >= 0", name="ck_cp_clicks_nonneg"),
@@ -314,22 +307,6 @@ class CampaignPerformance(Base):
     hour_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     impressions: Mapped[int] = mapped_column(Integer, nullable=False)
     clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    ctr: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Click-through rate as decimal (0.0000-1.0000)
-    completion_rate: Mapped[int] = mapped_column(Integer, nullable=False)  # store as percentage 0..100
-    render_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Render rate as decimal (0.0000-1.0000)
-    fill_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Fill rate as decimal (0.0000-1.0000)
-    response_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Response rate as decimal (0.0000-1.0000)
-    video_skip_rate: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.0
-    )  # Video skip rate as decimal (0.0000-1.0000)
     video_start: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # Video start count
     frequency: Mapped[int] = mapped_column(Integer, nullable=False)
     reach: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -377,6 +354,11 @@ class CampaignPerformance(Base):
     is_business_hour: Mapped[bool] = mapped_column(
         Integer, nullable=False, comment="Whether this is during business hours (0/1)"
     )
+    
+    # Date aggregation columns
+    daily_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="Date of the hour_ts (for daily aggregation)")
+    weekly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of week containing hour_ts (Monday)")
+    monthly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of month containing hour_ts")
 
     # ctr_recalc: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)")
     # viewability_rate: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True, comment="Viewability rate (viewable/impressions)")
@@ -586,6 +568,11 @@ class CampaignPerformanceExtended(Base):
     is_business_hour: Mapped[bool] = mapped_column(
         Integer, nullable=False, comment="Whether this is during business hours (0/1)"
     )
+    
+    # Date aggregation columns
+    daily_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="Date of the hour_ts (for daily aggregation)")
+    weekly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of week containing hour_ts (Monday)")
+    monthly_start_day_date: Mapped[date] = mapped_column(Date, nullable=False, comment="First day of month containing hour_ts")
 
     ctr_recalc: Mapped[float | None] = mapped_column(
         Numeric(5, 4), nullable=True, comment="Recalculated CTR (clicks/impressions)"
@@ -622,4 +609,24 @@ class CampaignPerformanceExtended(Base):
     )
     supply_funnel_efficiency: Mapped[float | None] = mapped_column(
         Numeric(5, 4), nullable=True, comment="Supply funnel efficiency (eligible/requests)"
+    )
+
+    # Core calculated metrics (moved from CampaignPerformance)
+    ctr: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="CTR: sum(clicks) / sum(impressions)"
+    )
+    completion_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Completion rate: sum(video_q100) / NULLIF(sum(video_start), 0) × 100"
+    )
+    render_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Render rate: sum(viewable_impressions) / sum(impressions)"
+    )
+    fill_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Fill rate: sum(auctions_won) / NULLIF(sum(eligible_impressions), 0)"
+    )
+    response_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Response rate: sum(responses) / NULLIF(sum(requests), 0)"
+    )
+    video_skip_rate: Mapped[float | None] = mapped_column(
+        Numeric(5, 4), nullable=True, comment="Video skip rate: sum(skips) / NULLIF(sum(video_start), 0)"
     )
