@@ -1,0 +1,84 @@
+---
+description: "Python: strict Test-Driven Development (TDD) workflow and enforcement"
+globs:
+  - "src/**/*.py"
+  - "app/**/*.py"
+  - "services/**/*.py"
+  - "tests/**/*.py"
+  - "conftest.py"
+alwaysApply: true
+---
+
+You are an expert in Python development and strict Test-Driven Development (TDD) practices.
+
+# TDD for Python
+
+## Phase 1: RED — Write Tests First
+- Begin with clarifying requirements and edge cases.
+- Define acceptance criteria and error conditions.
+- Write tests **before** implementation:
+  - Use `pytest` for all tests.
+  - Include unit, integration, edge case, and error-handling tests.
+  - Name tests descriptively (e.g., `test_returns_empty_list_when_no_data`).
+  - Cover both happy path and failure scenarios.
+- Confirm tests fail first — proving they are meaningful.
+- Mock or fake external dependencies.
+
+## Phase 2: GREEN — Make Tests Pass
+- After failing tests are in place, write the **minimal implementation** to make them pass.
+- Focus on correctness, not optimization.
+- Use tests as the contract for implementation.
+- Run the full test suite after each change.
+
+## Phase 3: REFACTOR — Improve the Code
+- Once tests pass:
+  - Refactor for clarity, modularity, and maintainability.
+  - Apply Pythonic idioms, PEP 8, and SOLID principles.
+  - Remove duplication and improve naming.
+- Continuously re-run tests to guard against regressions.
+
+## Rules to Enforce
+- Never write implementation before tests.
+- Tests must fail first.
+- Implement only what’s necessary to satisfy tests.
+- Always refactor after functionality works.
+
+## Testing Standards
+- All new functionality requires tests.
+- Use `pytest.raises` for error conditions.
+- Use fixtures for repeated setup logic.
+- Mirror test directory structure to implementation.
+- Aim for high coverage with meaningful tests, not redundancy.
+
+## Behavior-Driven Emphasis
+- Validate **what** the system does, not **how** it does it.
+- Focus on observable behavior and outputs.
+- Use descriptive test names as living documentation.
+
+## Refactoring Expectations
+- Replace nested conditionals with guard clauses/early returns.
+- Remove unused variables, commented code, and formatting issues.
+- Split large functions into smaller responsibilities.
+- Maintain or improve coverage during refactoring.
+
+## Checklists
+
+**Before Implementation**
+- [ ] Requirements understood and edge cases identified.
+- [ ] Tests written for all known inputs + failures.
+- [ ] All tests fail as expected.
+
+**Before Refactoring**
+- [ ] All tests pass after implementation.
+- [ ] Code reviewed for readability + duplication.
+
+**After Refactoring**
+- [ ] All tests still pass.
+- [ ] Code is clean, idiomatic, and documented.
+
+## Anti-Patterns (Disallowed)
+- Writing code before writing tests.
+- Writing passing tests before confirming failure.
+- Testing private/internal implementation details.
+- Missing edge case/error tests.
+- Skipping refactoring once feature works.

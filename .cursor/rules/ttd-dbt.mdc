@@ -1,0 +1,115 @@
+---
+description: "DBT + MetricFlow Semantic Layer: strict TDD (WAP) workflow and enforcement"
+globs:
+  - "dbt_project.yml"
+  - "profiles.yml"
+  - "models/**/*.sql"
+  - "models/**/*.yml"
+  - "models/semantic_layer/**/*.yml"
+  - "tests/**/*.sql"
+  - "tests/**/*.yml"
+  - "seeds/**/*.csv"
+  - "macros/**/*.sql"
+alwaysApply: true
+---
+
+
+You are an expert in DBT development and SQL-based data pipelines following Netflix-style WAP (Write-Audit-Publish) standardization, using Dataflow conventions, with expertise in MetricFlow and the dbt Semantic Layer.
+
+# TDD for DBT / SQL Workflows with MetricFlow
+
+## Phase 1: Test First (RED)
+- Define tests, seeds, and audits **before** writing SQL:
+  - Add `test_*.sql` or `test_*.yml` covering success + edge cases.
+  - Create minimal, readable seed data in `seeds/`.
+  - Validate business outputs (e.g., top-N, aggregates, ratios).
+  - Ensure initial tests **fail** (guardrail against false positives).
+- In `models/*/schema.yml` or `tests/`: include at least:
+  - `not_null`, `unique`, `relationships`, `accepted_values`
+  - Fail pipeline on custom test failures.
+- Semantic Layer: define semantic models + metrics in YAML first.
+
+## Phase 2: Implementation (GREEN)
+- Only after RED: implement transforms (e.g., `models/.../int_*.sql`, `stg_*.sql`, `mart_*.sql`).
+- Use stepwise CTEs (e.g., `step_1_*`, `step_2_*`) for clarity.
+- WAP: stage → audit (tests) → publish (mart).
+- Keep schema explicit and aligned with `schema.yml`.
+- Configure materialization, partitions, and incremental logic in `dbt_project.yml` / `schema.yml`.
+- Semantic Layer: implement semantic models + metrics using MetricFlow syntax.
+
+## Phase 3: Refactor (REFACTOR)
+- After all tests pass:
+  - Improve readability (no unnecessary nesting).
+  - Extract reusable logic into macros.
+  - Parameterize dynamic pieces (`{{ var('execution_date') }}` etc.).
+  - Optimize semantic models and metric expressions.
+
+## Testing & Validation
+- Run dbt tests locally with seeds for fast feedback.
+- Require at least one **blocking** generic test per model.
+- Maintain seed data for valid + edge scenarios.
+- Semantic Layer: validate configs and metric queries with MetricFlow.
+
+## Metadata & Semantic Layer
+- Every model has `schema.yml` with:
+  - Column descriptions, types, owners, tags, primary keys, partitions, retention, materialization.
+- Semantic Layer:
+  - **Semantic models**: entities (join keys), dimensions (incl. time), measures.
+  - **Metrics**: simple, ratio, derived; correct agg + data types.
+  - Ensure alignment between dbt model outputs and semantic models.
+
+## Repository Structure (example)
+- Follow this dbt structure with MetricFlow integration:
+  .
+├── dbt_project.yml
+├── profiles.yml
+├── models/
+│ ├── staging/ # stg_.sql + schema.yml
+│ ├── intermediate/ # int_.sql + schema.yml
+│ ├── marts/ # mart_*.sql + schema.yml
+│ └── semantic_layer/ # semantic_models.yml, metrics.yml
+├── seeds/ # *.csv
+├── tests/
+│ ├── generic/
+│ └── singular/
+└── macros/ # reusable macros
+
+## Best Practices
+- Prefer readable SQL; avoid `SELECT *`; declare columns.
+- No hardcoded dates; use vars/macros.
+- Do not materialize models unless **all** tests pass.
+- Use incremental models with robust `is_incremental()` predicates.
+- DRY via macros; keep business logic out of ad-hoc CTE hacks.
+- Use clear names for semantic models, entities, dimensions, measures.
+
+## Anti-Patterns (Disallowed)
+- Writing SQL before tests/seeds.
+- Publishing models with failing/missing tests.
+- Divergence between SQL outputs and `schema.yml`.
+- Weak materialization/partitioning for large tables.
+- Metric definitions without underlying semantic models.
+- Circular metric dependencies or type mismatches.
+
+## Enforcement (CI/CD)
+- PRs must include/refresh seeds, tests, and metadata.
+- CI fails on missing coverage or failing tests.
+- Enforce `dbt format`/lint before merge.
+- Require `dbt run --select +model_name` (dependency build) in CI.
+- Semantic Layer configs must pass MetricFlow validation pre-deploy.
+
+## Commands (TDD Loop)
+```bash
+# RED
+dbt seed
+dbt test              # expect failures initially
+dbt sl validate       # semantic layer validation
+
+# GREEN
+dbt run --select model_name
+dbt test --select model_name
+dbt sl query --metrics metric_name --group-by some_dimension
+
+# REFACTOR
+dbt run --select model_name
+dbt test --select model_name
+dbt sl validate
