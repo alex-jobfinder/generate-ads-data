@@ -40,7 +40,7 @@ def analyze_campaign_performance(conn):
     total_rows = conn.execute("SELECT COUNT(*) FROM campaign_performance").fetchone()[0]
     print(f"Total rows: {total_rows:,}")
     
-    # Campaign overview
+    # Campaign overview with calculated CTR
     campaigns = conn.execute("""
         SELECT 
             campaign_id,
@@ -48,7 +48,10 @@ def analyze_campaign_performance(conn):
             SUM(impressions) as total_impressions,
             SUM(clicks) as total_clicks,
             SUM(spend) as total_spend,
-            AVG(ctr) as avg_ctr
+            CASE 
+                WHEN SUM(impressions) > 0 THEN ROUND(CAST(SUM(clicks) AS FLOAT) / SUM(impressions), 4)
+                ELSE 0 
+            END as avg_ctr
         FROM campaign_performance 
         GROUP BY campaign_id
         ORDER BY total_impressions DESC
@@ -56,16 +59,20 @@ def analyze_campaign_performance(conn):
     
     print(f"\nCampaigns found: {len(campaigns)}")
     for campaign in campaigns:
-        print(f"  Campaign {campaign[0]}: {campaign[2]:,} impressions, {campaign[3]:,} clicks, ${campaign[4]:,} spend")
+        campaign_id, records, impressions, clicks, spend, ctr = campaign
+        print(f"  Campaign {campaign_id}: {impressions:,} impressions, {clicks:,} clicks, ${spend:,} spend, {ctr:.4f} CTR")
     
-    # Time analysis
+    # Time analysis with calculated CTR
     print("\n⏰ Time-based Analysis:")
     time_stats = conn.execute("""
         SELECT 
             hour_of_day,
             COUNT(*) as records,
             AVG(impressions) as avg_impressions,
-            AVG(ctr) as avg_ctr
+            CASE 
+                WHEN SUM(impressions) > 0 THEN ROUND(CAST(SUM(clicks) AS FLOAT) / SUM(impressions), 4)
+                ELSE 0 
+            END as avg_ctr
         FROM campaign_performance 
         GROUP BY hour_of_day 
         ORDER BY hour_of_day
@@ -74,13 +81,16 @@ def analyze_campaign_performance(conn):
     for hour, records, avg_imp, avg_ctr in time_stats:
         print(f"  Hour {hour:2d}: {records:3d} records, {avg_imp:6.0f} avg impressions, {avg_ctr:.4f} avg CTR")
     
-    # Business hours vs non-business hours
+    # Business hours vs non-business hours with calculated CTR
     business_stats = conn.execute("""
         SELECT 
             is_business_hour,
             COUNT(*) as records,
             AVG(impressions) as avg_impressions,
-            AVG(ctr) as avg_ctr,
+            CASE 
+                WHEN SUM(impressions) > 0 THEN ROUND(CAST(SUM(clicks) AS FLOAT) / SUM(impressions), 4)
+                ELSE 0 
+            END as avg_ctr,
             SUM(spend) as total_spend
         FROM campaign_performance 
         GROUP BY is_business_hour
@@ -96,13 +106,16 @@ def query_specific_metrics(conn):
     print("\n📈 Key Performance Metrics")
     print("=" * 50)
     
-    # Overall performance
+    # Overall performance with calculated CTR
     overall = conn.execute("""
         SELECT 
             SUM(impressions) as total_impressions,
             SUM(clicks) as total_clicks,
             SUM(spend) as total_spend,
-            AVG(ctr) as overall_ctr,
+            CASE 
+                WHEN SUM(impressions) > 0 THEN ROUND(CAST(SUM(clicks) AS FLOAT) / SUM(impressions), 4)
+                ELSE 0 
+            END as overall_ctr,
             SUM(viewable_impressions) as total_viewable,
             SUM(video_q100) as total_video_completions
         FROM campaign_performance
@@ -128,12 +141,50 @@ def query_specific_metrics(conn):
         print(f"Viewability Rate: {viewability_rate:.2%}")
         print(f"Video Completion Rate: {video_completion_rate:.2%}")
 
+def analyze_audience_data(conn):
+    """Analyze audience_json data if available"""
+    print("\n👥 Audience Data Analysis")
+    print("=" * 50)
+    
+    try:
+        # Check if audience_json column exists and has data
+        sample_audience = conn.execute("""
+            SELECT audience_json 
+            FROM campaign_performance 
+            WHERE audience_json IS NOT NULL 
+            AND audience_json != '' 
+            LIMIT 1
+        """).fetchone()
+        
+        if sample_audience and sample_audience[0]:
+            print("✅ Audience JSON data found")
+            
+            # Count records with audience data
+            audience_count = conn.execute("""
+                SELECT COUNT(*) 
+                FROM campaign_performance 
+                WHERE audience_json IS NOT NULL 
+                AND audience_json != ''
+            """).fetchone()[0]
+            
+            print(f"Records with audience data: {audience_count:,}")
+            
+            # Sample audience breakdown
+            print("\n📋 Sample audience data structure:")
+            print(sample_audience[0][:200] + "..." if len(sample_audience[0]) > 200 else sample_audience[0])
+            
+        else:
+            print("⚠️  No audience JSON data found")
+            
+    except Exception as e:
+        print(f"⚠️  Could not analyze audience data: {e}")
+
 def export_to_csv(conn):
     """Export data to CSV for external analysis"""
     print("\n💾 Exporting Data to CSV")
     print("=" * 50)
     
-    # Export campaign summary
+    # Export campaign summary with calculated CTR
     campaign_summary = conn.execute("""
         SELECT 
             campaign_id,
@@ -141,7 +192,10 @@ def export_to_csv(conn):
             SUM(impressions) as total_impressions,
             SUM(clicks) as total_clicks,
             SUM(spend) as total_spend,
-            AVG(ctr) as avg_ctr,
+            CASE 
+                WHEN SUM(impressions) > 0 THEN ROUND(CAST(SUM(clicks) AS FLOAT) / SUM(impressions), 4)
+                ELSE 0 
+            END as avg_ctr,
             SUM(viewable_impressions) as total_viewable,
             SUM(video_q100) as total_video_completions
         FROM campaign_performance 
@@ -149,10 +203,10 @@ def export_to_csv(conn):
         ORDER BY total_impressions DESC
     """).fetchdf()
     
-    campaign_summary.to_csv('campaign_summary.csv', index=False)
+    # campaign_summary.to_csv('campaign_summary.csv', index=False)
     print(f"Campaign summary exported to campaign_summary.csv ({len(campaign_summary)} campaigns)")
     
-    # Export hourly performance
+    # Export hourly performance with calculated CTR
     hourly_performance = conn.execute("""
         SELECT 
             hour_ts,
@@ -162,7 +216,10 @@ def export_to_csv(conn):
             campaign_id,
             impressions,
             clicks,
-            ctr,
+            CASE 
+                WHEN impressions > 0 THEN ROUND(CAST(clicks AS FLOAT) / impressions, 4)
+                ELSE 0 
+            END as ctr,
             spend,
             viewable_impressions,
             video_q100
@@ -170,7 +227,7 @@ def export_to_csv(conn):
         ORDER BY hour_ts
     """).fetchdf()
     
-    hourly_performance.to_csv('hourly_performance.csv', index=False)
+    # hourly_performance.to_csv('hourly_performance.csv', index=False)
     print(f"Hourly performance exported to hourly_performance.csv ({len(hourly_performance)} records)")
 
 def main():
@@ -185,12 +242,15 @@ def main():
         explore_database(conn)
         analyze_campaign_performance(conn)
         query_specific_metrics(conn)
+        analyze_audience_data(conn)
         export_to_csv(conn)
         
         print("\n✅ Analysis complete! Check the generated CSV files.")
         
     except Exception as e:
         print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         if 'conn' in locals():
             conn.close()
