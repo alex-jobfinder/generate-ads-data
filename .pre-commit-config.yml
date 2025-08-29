@@ -1,0 +1,7 @@
+- repo: local
+  hooks:
+    - id: sync-dbt-headers
+      name: Sync dbt model headers
+      entry: python tools/sync_model_headers.py
+      language: system
+      files: ^models/.*\.sql$

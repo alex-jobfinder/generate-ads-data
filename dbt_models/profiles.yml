@@ -1,0 +1,13 @@
+ads_performance_metrics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../ads.duckdb"
+      schema: main
+      threads: 1
+    prod:
+      type: duckdb
+      path: "../ads.duckdb"
+      schema: main
+      threads: 1

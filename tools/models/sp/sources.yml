@@ -1,0 +1,8 @@
+version: 2
+
+seeds:
+  - name: sp_events_base
+  - name: sp_events_clicks
+  - name: sp_events_impressions
+
+

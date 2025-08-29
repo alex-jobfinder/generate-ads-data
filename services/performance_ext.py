@@ -319,7 +319,9 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
                 second_of_minute=raw_row.second_of_minute,
                 day_of_week=raw_row.day_of_week,
                 is_business_hour=raw_row.is_business_hour,
-                # Calculated fields
+                # Calculated fields 
+                ## TODO: REPLICATE THESE AS MEASURES IN DBT 
+                ## ASSUME DATA FROM raw_row will be passed to DBT similarly.
                 ctr_recalc=extended_metrics.ctr_recalc,
                 viewability_rate=extended_metrics.viewability_rate,
                 audibility_rate=extended_metrics.audibility_rate,

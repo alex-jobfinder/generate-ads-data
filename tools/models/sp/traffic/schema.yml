@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: sp_traffic
+    description: "Aggregated clicks, impressions, and cost per idempotency_id"
+    columns:
+      - name: idempotency_id
+        tests: [not_null, unique]
+      - name: campaign_id
+        tests:
+          - relationships:
+              to: ref('sp_campaigns')
+              field: campaign_id
+      - name: ad_group_id
+        tests:
+          - relationships:
+              to: ref('sp_ad_groups')
+              field: ad_group_id
+      - name: ad_id
+        tests:
+          - relationships:
+              to: ref('sp_ads')
+              field: ad_id
+      - name: keyword_id
+        tests:
+          - relationships:
+              to: ref('sp_targets')
+              field: target_id
+      - name: clicks
+        tests:
+          - not_null
+      - name: impressions
+        tests:
+          - not_null
+      - name: cost
+        tests:
+          - not_null
+
+

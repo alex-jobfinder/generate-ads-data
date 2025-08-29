@@ -1,0 +1,49 @@
+# Alternative profile configurations for different database types
+# Choose the one that matches your DBT installation
+
+# Option 1: DuckDB (recommended - most compatible)
+ads_performance_metrics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../ads.duckdb"
+      schema: main
+      threads: 1
+      keepalives_idle: 0
+      search_path: main
+      retries: 3
+
+# Option 2: PostgreSQL (if you have postgres adapter)
+# ads_performance_metrics:
+#   target: dev
+#   outputs:
+#     dev:
+#       type: postgres
+#       host: localhost
+#       user: your_user
+#       password: your_password
+#       port: 5432
+#       dbname: ads_performance
+#       schema: public
+#       threads: 4
+
+# Option 3: SQLite with dbt-sqlite package (requires additional setup)
+# ads_performance_metrics:
+#   target: dev
+#   outputs:
+#     dev:
+#       type: sqlite
+#       path: "../ads.db"
+#       schema: main
+#       threads: 1
+
+# Option 4: DuckDB with in-memory database (for testing)
+# ads_performance_metrics:
+#   target: dev
+#   outputs:
+#     dev:
+#       type: duckdb
+#       path: ":memory:"
+#       schema: main
+#       threads: 1

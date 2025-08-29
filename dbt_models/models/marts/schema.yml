@@ -1,0 +1,325 @@
+version: 2
+
+models:
+  - name: mart_campaign_performance_extended
+    description: "Extended campaign performance metrics with calculated fields, replicating Python performance_ext.py logic"
+    columns:
+      - name: campaign_id
+        description: "Campaign identifier (FK to campaigns.id)"
+        tests:
+          - not_null
+      
+      - name: hour_ts
+        description: "Hour timestamp with timezone (grain)"
+        tests:
+          - not_null
+      
+      # Supply funnel
+      - name: requests
+        description: "Ad requests from player/device"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: responses
+        description: "Ad responses returned from ad server"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: eligible_impressions
+        description: "Responses passing filters"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: auctions_won
+        description: "Wins/selected responses"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: impressions
+        description: "NETFLIX CORE: Total ad impressions served"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      # Delivery quality
+      - name: viewable_impressions
+        description: "Impressions meeting viewability standards"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: audible_impressions
+        description: "Volume-on starts"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      # Video progression
+      - name: video_starts
+        description: "NETFLIX CORE: Number of video ads that began playing"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: video_q25
+        description: "Views reaching 25% completion"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: video_q50
+        description: "Views reaching 50% completion"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: video_q75
+        description: "Views reaching 75% completion"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: video_q100
+        description: "NETFLIX CORE: Video completions"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: skips
+        description: "NETFLIX CORE: Skips of video ads"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: avg_watch_time_seconds
+        description: "Average watch length in seconds (estimated from quartiles)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 3600
+      
+      # Interactions
+      - name: clicks
+        description: "NETFLIX CORE: Total click-through interactions"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: qr_scans
+        description: "QR code scans (if tracked)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: interactive_engagements
+        description: "Interactive overlays/choices"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      # Reach & frequency
+      - name: reach
+        description: "Unique viewers in hour"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: frequency
+        description: "Average impressions per viewer in hour"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+      
+      # Spend / pricing
+      - name: spend
+        description: "Spend in account currency cents"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: effective_cpm
+        description: "Effective CPM in cents"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      # Errors
+      - name: error_count
+        description: "Player/serve errors"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: timeout_count
+        description: "Request timeouts"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      # Optional metadata
+      - name: comment
+        description: "Additional notes or metadata about the campaign performance data"
+      
+      # Temporal breakdown columns
+      - name: human_readable
+        description: "Human-readable timestamp string"
+        tests:
+          - not_null
+      
+      - name: hour_of_day
+        description: "Hour of day (0-23)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 23
+      
+      - name: minute_of_hour
+        description: "Minute of hour (0-59)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 59
+      
+      - name: second_of_minute
+        description: "Second of minute (0-59)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 59
+      
+      - name: day_of_week
+        description: "Day of week (0=Monday, 6=Sunday)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 6
+      
+      - name: is_business_hour
+        description: "Whether this is during business hours (0/1)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+      
+      # ===== CALCULATED FIELDS (replicating Python performance_ext.py exactly) =====
+      
+      - name: ctr_recalc
+        description: "Recalculated CTR (clicks/impressions) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: viewability_rate
+        description: "Viewability rate (viewable/impressions) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: audibility_rate
+        description: "Audibility rate (audible/impressions) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: video_start_rate
+        description: "Video start rate (starts/impressions) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: video_completion_rate
+        description: "Video completion rate (q100/starts) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: video_skip_rate_ext
+        description: "Extended video skip rate (skips/starts) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: qr_scan_rate
+        description: "QR scan rate (scans/impressions) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: interactive_rate
+        description: "Interactive engagement rate (engagements/impressions) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: auction_win_rate
+        description: "Auction win rate (won/eligible) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: error_rate
+        description: "Error rate (errors/requests) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: timeout_rate
+        description: "Timeout rate (timeouts/requests) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      
+      - name: supply_funnel_efficiency
+        description: "Supply funnel efficiency (eligible/requests) - COMPUTED FROM EXISTING DATA"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0

@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: sp_campaigns
+    description: "Sponsored Products campaigns"
+    columns:
+      - name: campaign_id
+        tests: [not_null, unique]
+      - name: state
+        tests:
+          - accepted_values:
+              values: ["ENABLED", "PAUSED", "ARCHIVED"]
+
+  - name: sp_ad_groups
+    description: "Sponsored Products ad groups"
+    columns:
+      - name: ad_group_id
+        tests: [not_null, unique]
+      - name: campaign_id
+        tests:
+          - relationships:
+              to: ref('sp_campaigns')
+              field: campaign_id
+
+  - name: sp_ads
+    description: "Sponsored Products ads"
+    columns:
+      - name: ad_id
+        tests: [not_null, unique]
+      - name: ad_type
+        tests:
+          - accepted_values:
+              values: ["PRODUCT_AD"]
+      - name: ad_group_id
+        tests:
+          - relationships:
+              to: ref('sp_ad_groups')
+              field: ad_group_id
+      - name: campaign_id
+        tests:
+          - relationships:
+              to: ref('sp_campaigns')
+              field: campaign_id
+
+  - name: sp_targets
+    description: "Sponsored Products targets"
+    columns:
+      - name: target_id
+        tests: [not_null, unique]
+      - name: match_type
+        tests:
+          - accepted_values:
+              values: ["EXACT", "PHRASE", "BROAD", "ASIN", "CATEGORY", "BRAND", "EXPRESSION_PREDEFINED"]
+      - name: ad_group_id
+        tests:
+          - relationships:
+              to: ref('sp_ad_groups')
+              field: ad_group_id
+      - name: campaign_id
+        tests:
+          - relationships:
+              to: ref('sp_campaigns')
+              field: campaign_id
+
+

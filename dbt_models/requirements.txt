@@ -1,0 +1,2 @@
+duckdb>=0.9.0
+sqlite3  # Usually comes with Python standard library

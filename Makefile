@@ -70,7 +70,7 @@ clean:
 	rm -f ads.db ads_p0.db ads_p0.db-shm ads_p0.db-wal
 	rm -rf __pycache__ .pytest_cache $(VENV)
 
-# Run all tests                                                                                                                                                                                                                   ─╯
+# # Run all tests                                                                                                                                                                                                                   ─╯
 # poetry run pytest
 
 # # Run specific test files
