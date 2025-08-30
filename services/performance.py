@@ -173,14 +173,14 @@ def generate_hourly_performance_raw(campaign_id: int, seed: int | None = None, r
 
             # eligible / auctions won (counts)
             min_eligible = int(0.8 * responses) + 1
-            eligible_impressions = max(min_eligible, int(impressions * rng.uniform(0.85, 0.99)))
+            eligible_impressions = max(min_eligible, int(impressions * rng.uniform(0.90, 0.99)))
             min_auctions = int(0.8 * eligible_impressions) + 1
-            auctions_won = max(min_auctions, int(impressions * rng.uniform(0.90, 1.02)))
+            auctions_won_candidate = int(impressions * rng.uniform(0.90, 0.99))
+            auctions_won = min(eligible_impressions, max(min_auctions, auctions_won_candidate))
 
             # viewable / audible impressions (counts)
-            viewable_impressions = int(
-                impressions * max(0.70, min(0.99, rng.uniform(0.80, 0.98) * factor))
-            )
+            # Ensure high viewability in realistic range (90%–99%)
+            viewable_impressions = int(impressions * rng.uniform(0.90, 0.99))
             audible_impressions = int(
                 impressions
                 * max(0.20, min(0.95, rng.uniform(0.35, 0.80) * (1.05 if hour.hour >= 18 or hour.hour <= 22 else 0.95)))

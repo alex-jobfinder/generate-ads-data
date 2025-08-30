@@ -72,6 +72,7 @@ from .orm import (
     Base,
     Budget,
     Campaign,
+    CampaignHierarchyDenorm,
     CampaignPerformance,
     CampaignPerformanceExtended,
     Creative,
@@ -88,6 +89,7 @@ from .schemas import (
     CreativeCreate,
     LineItemCreate,
     Targeting,
+    CampaignHierarchyDenormSchema,
 )
 from .schemas import (
     Budget as BudgetSchema,
@@ -168,6 +170,7 @@ class ORMRegistry:
     FrequencyCap = FrequencyCap
     CampaignPerformance = CampaignPerformance
     CampaignPerformanceExtended = CampaignPerformanceExtended
+    CampaignHierarchyDenorm = CampaignHierarchyDenorm
 
 
 class SchemaRegistry:
@@ -184,6 +187,9 @@ class SchemaRegistry:
     FlightSchema = FlightSchema
     BudgetSchema = BudgetSchema
     Targeting = Targeting
+    
+    # Denormalized schemas
+    CampaignHierarchyDenormSchema = CampaignHierarchyDenormSchema
 
 
 class UtilityRegistry:
@@ -255,6 +261,10 @@ class Registry:
         return self.orm.CampaignPerformanceExtended
 
     @property
+    def CampaignHierarchyDenorm(self):
+        return self.orm.CampaignHierarchyDenorm
+
+    @property
     def AdvertiserCreate(self):
         return self.schemas.AdvertiserCreate
 
@@ -285,6 +295,10 @@ class Registry:
     @property
     def Targeting(self):
         return self.schemas.Targeting
+
+    @property
+    def CampaignHierarchyDenormSchema(self):
+        return self.schemas.CampaignHierarchyDenormSchema
 
     # Direct access to commonly used enums
     @property
@@ -352,4 +366,6 @@ __all__ = [
     "ORMRegistry",
     "SchemaRegistry",
     "UtilityRegistry",
+    "CampaignHierarchyDenorm",
+    "CampaignHierarchyDenormSchema",
 ]

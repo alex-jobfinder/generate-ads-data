@@ -25,6 +25,31 @@ run_cmd() {
     sleep 1
 }
 
+# # Step 0: Initialize Database (Create all tables)
+# echo ""
+# echo "🗄️ STEP 0: Database Initialization"
+# echo "----------------------------------------"
+
+# run_cmd "Initializing database and creating all tables" \
+#     "python cli.py init-db"
+
+# # Verify database was created
+# if [ -f "ads.db" ]; then
+#     size=$(du -h ads.db | cut -f1)
+#     echo "✅ Database created: ads.db ($size)"
+#     echo "✅ All tables initialized successfully"
+    
+#     # Show database schemas
+#     echo ""
+#     echo "📋 Database Tables Created:"
+#     run_cmd "Showing database schemas and table structures" \
+#         "python cli.py show-schemas"
+# else
+#     echo "❌ Database initialization failed - ads.db not found"
+#     echo "❌ Stopping execution - database is required"
+#     exit 1
+# fi
+
 # Step 1: Create all examples
 echo ""
 echo "📊 STEP 1: Creating Complete Examples"

@@ -1,0 +1,17 @@
+# Core dependencies for Netflix Ads Data Generator
+click>=8.1.0
+sqlalchemy>=2.0.0
+pydantic[email]>=2.11.7
+faker>=20.0.0
+rich>=13.0.0
+colorlog>=6.8.0
+pandas>=2.3.2
+
+# Optional: DBT integration
+dbt-duckdb>=1.9.4
+dbt-metricflow>=0.8.2
+
+# Development dependencies
+pytest>=7.0.0
+black>=23.0.0
+ruff>=0.1.0

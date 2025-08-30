@@ -77,6 +77,9 @@ def init_db() -> None:
 
     registry.Base.metadata.drop_all(bind=engine)
     registry.Base.metadata.create_all(bind=engine)
+    
+    # Create the campaign hierarchy view
+    create_campaign_hierarchy_view()
 
 
 def migrate_db() -> None:
@@ -355,3 +358,112 @@ def generate_performance(campaign_id: int, seed: int | None = None, replace: boo
     """Generate synthetic hourly performance rows for a campaign and return summary."""
     rows = generate_hourly_performance(campaign_id, seed=seed, replace=replace)
     return {"campaign_id": campaign_id, "rows": rows}
+
+
+def create_campaign_hierarchy_view() -> None:
+    """Create the campaign hierarchy view for analytics."""
+    view_sql = """
+    CREATE VIEW IF NOT EXISTS v_campaign_hierarchy AS
+    SELECT 
+        -- Primary key columns
+        c.id as creative_id,
+        li.id as line_item_id,
+        camp.id as campaign_id,
+        adv.id as advertiser_id,
+        
+        -- Advertiser columns (highest level)
+        adv.name as advertiser_name,
+        adv.status as advertiser_status,
+        adv.created_at as advertiser_created_at,
+        adv.updated_at as advertiser_updated_at,
+        adv.brand,
+        adv.contact_email,
+        adv.agency_name,
+        
+        -- Campaign columns
+        camp.name as campaign_name,
+        camp.status as campaign_status,
+        camp.created_at as campaign_created_at,
+        camp.updated_at as campaign_updated_at,
+        camp.objective,
+        camp.currency,
+        camp.target_cpm,
+        camp.dsp_partner,
+        camp.programmatic_buy_type,
+        camp.programmatic_partner,
+        camp.content_adjacency_tier,
+        camp.brand_lift_enabled,
+        camp.attention_metrics_enabled,
+        camp.clean_room_provider,
+        camp.measurement_partner,
+        camp.external_ref,
+        
+        -- Flight columns
+        f.id as flight_id,
+        f.start_date,
+        f.end_date,
+        f.created_at as flight_created_at,
+        f.updated_at as flight_updated_at,
+        
+        -- Budget columns
+        b.id as budget_id,
+        b.amount,
+        b.type as budget_type,
+        b.currency as budget_currency,
+        b.created_at as budget_created_at,
+        b.updated_at as budget_updated_at,
+        
+        -- Line Item columns
+        li.name as line_item_name,
+        li.status as line_item_status,
+        li.created_at as line_item_created_at,
+        li.updated_at as line_item_updated_at,
+        li.ad_format,
+        li.bid_cpm,
+        li.pacing_pct,
+        li.targeting_json,
+        li.device_targets_json,
+        li.duration_seconds as line_item_duration_seconds,
+        li.ad_server_type,
+        li.pixel_vendor,
+        li.geo_tier,
+        
+        -- Creative (Ad) columns (lowest level)
+        c.name as creative_name,
+        c.status as creative_status,
+        c.created_at as creative_created_at,
+        c.updated_at as creative_updated_at,
+        c.asset_url,
+        c.mime_type,
+        c.duration_seconds,
+        c.qa_status,
+        c.placement,
+        c.file_format,
+        c.width,
+        c.height,
+        c.frame_rate,
+        c.bitrate_kbps,
+        c.file_size_bytes,
+        c.is_interactive,
+        c.interactive_meta_json,
+        c.is_pause_ad,
+        c.qr_code_url,
+        c.overlay_cta_text
+        
+    FROM advertisers adv
+    JOIN campaigns camp ON adv.id = camp.advertiser_id
+    JOIN flights f ON camp.id = f.campaign_id
+    JOIN budgets b ON camp.id = b.campaign_id
+    JOIN line_items li ON camp.id = li.campaign_id
+    JOIN creatives c ON li.id = c.line_item_id
+    ORDER BY adv.id, camp.id, f.id, b.id, li.id, c.id;
+    """
+    
+    with engine.connect() as conn:
+        try:
+            conn.execute(text(view_sql))
+            conn.commit()
+            print("✅ Campaign hierarchy view created successfully")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not create campaign hierarchy view: {e}")
+            # Continue anyway - this is not critical

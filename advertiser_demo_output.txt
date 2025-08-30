@@ -1,0 +1,433 @@
+🎯 Netflix Ads Data Generator - Advertiser Demo Output
+================================================================================
+This file contains the complete output from all demo commands
+Generated on: 2025-08-29 18:04:24.161874
+================================================================================
+
+
+================================================================================
+🔄 Creating aggressive luxury auto awareness campaign
+Command: python cli.py create-profile --name high_cpm_tv_awareness
+✅ Success!
+Output:
+{"campaign_id": 33, "line_item_id": 33, "advertiser_id": 33}
+{
+  "advertiser_id": 33,
+  "campaign_id": 33,
+  "line_item_ids": [
+    1
+  ],
+  "status": "created",
+  "message": "Complete example created successfully"
+}
+
+================================================================================
+
+================================================================================
+🔄 Creating defensive mobile consideration campaign
+Command: python cli.py create-profile --name mobile_consideration
+✅ Success!
+Output:
+{"campaign_id": 34, "line_item_id": 34, "advertiser_id": 34}
+{
+  "advertiser_id": 34,
+  "campaign_id": 34,
+  "line_item_ids": [
+    1
+  ],
+  "status": "created",
+  "message": "Complete example created successfully"
+}
+
+================================================================================
+
+================================================================================
+🔄 Listing all campaigns in table format
+Command: python cli.py list-campaigns --format table
+✅ Success!
+Output:
+📊 Campaign List
+================================================================================
+ID   Name                      Objective       Status     CPM      DSP         
+--------------------------------------------------------------------------------
+1    EV Awareness Launch       AWARENESS       ACTIVE     $1,550   DV360       
+2    New Flavor Consideration  AWARENESS       ACTIVE     $1,275   DV360       
+3    App Acquisition Q4        AWARENESS       ACTIVE     $1,825   DV360       
+4    Campaign LI A             AWARENESS       ACTIVE     $730     DV360       
+5    Campaign LI Worker        AWARENESS       ACTIVE     $1,000   DV360       
+6    Campaign LI Eye           AWARENESS       ACTIVE     $1,000   DV360       
+7    Campaign LI Financial     AWARENESS       ACTIVE     $1,000   DV360       
+8    Campaign LI Task          AWARENESS       ACTIVE     $1,000   DV360       
+9    Campaign LI Republican    AWARENESS       ACTIVE     $1,000   DV360       
+10   Campaign LI Research      AWARENESS       ACTIVE     $1,000   DV360       
+11   Campaign LI Order         AWARENESS       ACTIVE     $1,000   DV360       
+12   Campaign LI Suggest       AWARENESS       ACTIVE     $10      DV360       
+13   Campaign LI Second        AWARENESS       ACTIVE     $1,000   DV360       
+14   Campaign LI General       AWARENESS       ACTIVE     $1,000   DV360       
+15   Campaign LI National      AWARENESS       ACTIVE     $1,000   DV360       
+16   Campaign LI Two           AWARENESS       ACTIVE     $185     DV360       
+17   Campaign LI Enough        AWARENESS       ACTIVE     $1,000   DV360       
+18   Campaign LI Staff         AWARENESS       ACTIVE     $1,000   DV360       
+19   Campaign LI Difference    AWARENESS       ACTIVE     $1,000   DV360       
+20   Campaign LI Present       AWARENESS       ACTIVE     $1,000   DV360       
+21   Campaign LI Visit         AWARENESS       ACTIVE     $1,000   DV360       
+22   Campaign LI Magazine      AWARENESS       ACTIVE     $1,000   DV360       
+23   Campaign LI Middle        AWARENESS       ACTIVE     $1,000   DV360       
+24   Campaign LI Forward       AWARENESS       ACTIVE     $1,000   DV360       
+25   Campaign LI Clear         AWARENESS       ACTIVE     $1,000   DV360       
+26   Campaign LI Result        AWARENESS       ACTIVE     $1,000   DV360       
+27   Campaign LI Land          AWARENESS       ACTIVE     $1,000   DV360       
+28   Campaign LI Capital       AWARENESS       ACTIVE     $1,000   DV360       
+29   Campaign LI Despite       AWARENESS       ACTIVE     $1,000   DV360       
+30   Campaign LI Near          AWARENESS       ACTIVE     $1,000   DV360       
+31   Campaign LI Soldier       AWARENESS       ACTIVE     $1,000   DV360       
+32   Campaign LI Or            AWARENESS       ACTIVE     $1,000   DV360       
+33   Campaign LI Real          AWARENESS       ACTIVE     $1,000   DV360       
+34   Campaign LI Old           AWARENESS       ACTIVE     $1,000   DV360       
+
+================================================================================
+
+================================================================================
+🔄 Checking system and database status
+Command: python cli.py status
+✅ Success!
+Output:
+{
+  "database": {
+    "status": "healthy",
+    "size_mb": 38.8
+  },
+  "system": {
+    "python_version": "3.10.9",
+    "working_directory": "/home/alex/dbt_ads/generate-ads-data"
+  },
+  "campaigns": {
+    "advertisers": 34,
+    "campaigns": 34,
+    "line_items": 34,
+    "creatives": 34,
+    "performance": 0
+  }
+}
+
+================================================================================
+
+================================================================================
+🔄 Comparing awareness campaigns
+Command: python cli.py compare-by-objective --objective AWARENESS --top-n 3
+✅ Success!
+Output:
+{
+  "objective": "AWARENESS",
+  "total_campaigns": 3,
+  "campaigns": [
+    {
+      "id": 3,
+      "name": "App Acquisition Q4",
+      "target_cpm": 1825,
+      "status": "ACTIVE",
+      "dsp_partner": "DV360"
+    },
+    {
+      "id": 1,
+      "name": "EV Awareness Launch",
+      "target_cpm": 1550,
+      "status": "ACTIVE",
+      "dsp_partner": "DV360"
+    },
+    {
+      "id": 2,
+      "name": "New Flavor Consideration",
+      "target_cpm": 1275,
+      "status": "ACTIVE",
+      "dsp_partner": "DV360"
+    }
+  ]
+}
+
+================================================================================
+
+================================================================================
+🔄 Optimizing CPM for $50K awareness campaign
+Command: python cli.py optimize-cpm --budget 50000 --objective AWARENESS
+✅ Success!
+Output:
+{
+  "suggested_cpm": 50.0,
+  "estimated_impressions": 1000000,
+  "budget_efficiency": "low",
+  "objective": "AWARENESS",
+  "budget": 50000.0
+}
+
+================================================================================
+
+================================================================================
+🔄 Optimizing CPM for $75K conversion campaign
+Command: python cli.py optimize-cpm --budget 75000 --objective CONVERSION
+✅ Success!
+Output:
+{
+  "suggested_cpm": 37.5,
+  "estimated_impressions": 2000000,
+  "budget_efficiency": "medium",
+  "objective": "CONVERSION",
+  "budget": 75000.0
+}
+
+================================================================================
+
+================================================================================
+🔄 Projecting ROI for campaign 1 with optimistic scenario
+Command: python cli.py project-roi --campaign-id 1 --scenarios 3 --optimistic
+✅ Success!
+Output:
+{
+  "campaign_id": 1,
+  "scenarios": [
+    {
+      "name": "Conservative",
+      "roi": 1.5,
+      "confidence": "high"
+    },
+    {
+      "name": "Realistic",
+      "roi": 2.5,
+      "confidence": "medium"
+    },
+    {
+      "name": "Optimistic",
+      "roi": 4.0,
+      "confidence": "low"
+    }
+  ],
+  "total_scenarios": 3
+}
+
+================================================================================
+
+================================================================================
+🔄 Testing 15-second interactive video creative
+Command: python cli.py test-creative --format STANDARD_VIDEO --duration 15 --interactive
+✅ Success!
+Output:
+{
+  "format": "STANDARD_VIDEO",
+  "duration": 15,
+  "interactive": true,
+  "recommendations": [
+    "Test multiple durations (15s, 30s, 60s)",
+    "A/B test interactive vs static elements",
+    "Monitor engagement metrics closely",
+    "Test user interaction patterns",
+    "Monitor engagement time",
+    "Optimize for mobile touch interfaces"
+  ],
+  "test_type": "creative_format",
+  "estimated_test_duration": "2-4 weeks"
+}
+
+================================================================================
+
+================================================================================
+🔄 Testing 30-second standard video creative
+Command: python cli.py test-creative --format STANDARD_VIDEO --duration 30
+✅ Success!
+Output:
+{
+  "format": "STANDARD_VIDEO",
+  "duration": 30,
+  "interactive": false,
+  "recommendations": [
+    "Test multiple durations (15s, 30s, 60s)",
+    "A/B test interactive vs static elements",
+    "Monitor engagement metrics closely"
+  ],
+  "test_type": "creative_format",
+  "estimated_test_duration": "2-4 weeks"
+}
+
+================================================================================
+
+================================================================================
+🔄 Setting up A/B test: mobile vs multi-device targeting
+Command: python cli.py ab-test --variant-a mobile_only --variant-b multi_device --test-duration 14
+✅ Success!
+Output:
+{
+  "variant_a": "mobile_only",
+  "variant_b": "multi_device",
+  "test_duration_days": 14,
+  "setup_instructions": [
+    "Create two campaigns with identical settings",
+    "Modify only the variable you want to test",
+    "Run both campaigns simultaneously",
+    "Compare performance after test period"
+  ],
+  "test_config": {
+    "test_type": "A/B Test",
+    "variants": [
+      "mobile_only",
+      "multi_device"
+    ],
+    "duration_days": 14,
+    "sample_size": "Statistically significant",
+    "success_metrics": [
+      "CTR",
+      "Conversion Rate",
+      "CPC",
+      "ROAS"
+    ]
+  },
+  "best_practices": [
+    "Ensure equal budget allocation between variants",
+    "Test one variable at a time",
+    "Run test for full duration to account for day-of-week effects",
+    "Use statistical significance testing (p < 0.05)",
+    "Document all changes and hypotheses"
+  ],
+  "estimated_completion": "14 days from start",
+  "status": "setup_ready"
+}
+
+================================================================================
+
+================================================================================
+🔄 Forecasting 30-day performance with seasonal adjustments
+Command: python cli.py forecast --campaign-id 1 --days 30 --include-seasonal
+✅ Success!
+Output:
+{
+  "campaign_id": 1,
+  "forecast_days": 30,
+  "projected_metrics": {
+    "impressions": 360000,
+    "clicks": 8640,
+    "conversions": 270,
+    "spend": 66600
+  },
+  "confidence_level": "medium",
+  "seasonal_adjustments": true
+}
+
+================================================================================
+
+================================================================================
+🔄 Analyzing 90-day seasonal trends for campaign 1
+Command: python cli.py seasonal-trends --campaign-id 1 --period 90
+✅ Success!
+Output:
+{
+  "campaign_id": 1,
+  "analysis_period_days": 90,
+  "analysis_type": "Quarterly trend analysis",
+  "confidence_level": "medium",
+  "seasonal_patterns": {
+    "weekday_peaks": [
+      "Tuesday",
+      "Wednesday",
+      "Thursday"
+    ],
+    "time_peaks": [
+      "9AM-11AM",
+      "6PM-9PM"
+    ],
+    "seasonal_factors": [
+      "Holiday season",
+      "Back to school",
+      "Summer vacation"
+    ]
+  },
+  "recommendations": [
+    "Adjust bid strategies for peak performance days",
+    "Optimize creative for seasonal themes",
+    "Plan budget allocation around seasonal peaks",
+    "Monitor competitor seasonal patterns"
+  ],
+  "data_quality": "estimated"
+}
+
+================================================================================
+
+================================================================================
+🔄 Exporting campaign 1 data in JSON format with performance
+Command: python cli.py export-campaign --id 1 --format json --include-performance
+✅ Success!
+Output:
+{
+  "campaign_id": 1,
+  "campaign_data": {
+    "name": "EV Awareness Launch",
+    "status": "ACTIVE",
+    "created_at": "2025-08-29 23:46:27",
+    "updated_at": "2025-08-29 23:46:27",
+    "objective": "AWARENESS",
+    "currency": "USD",
+    "target_cpm": 1550,
+    "dsp_partner": "DV360",
+    "advertiser": "Luxury Auto Co",
+    "brand": "LuxAuto"
+  },
+  "line_items_count": 1,
+  "creatives_count": 1,
+  "performance_records": 100
+}
+
+================================================================================
+
+================================================================================
+🔄 Exporting campaign list in CSV format
+Command: python cli.py list-campaigns --format csv
+✅ Success!
+Output:
+ID,Name,Objective,Status,Target CPM,DSP Partner
+1,EV Awareness Launch,AWARENESS,ACTIVE,1550,DV360
+2,New Flavor Consideration,AWARENESS,ACTIVE,1275,DV360
+3,App Acquisition Q4,AWARENESS,ACTIVE,1825,DV360
+4,Campaign LI A,AWARENESS,ACTIVE,730,DV360
+5,Campaign LI Worker,AWARENESS,ACTIVE,1000,DV360
+6,Campaign LI Eye,AWARENESS,ACTIVE,1000,DV360
+7,Campaign LI Financial,AWARENESS,ACTIVE,1000,DV360
+8,Campaign LI Task,AWARENESS,ACTIVE,1000,DV360
+9,Campaign LI Republican,AWARENESS,ACTIVE,1000,DV360
+10,Campaign LI Research,AWARENESS,ACTIVE,1000,DV360
+11,Campaign LI Order,AWARENESS,ACTIVE,1000,DV360
+12,Campaign LI Suggest,AWARENESS,ACTIVE,10,DV360
+13,Campaign LI Second,AWARENESS,ACTIVE,1000,DV360
+14,Campaign LI General,AWARENESS,ACTIVE,1000,DV360
+15,Campaign LI National,AWARENESS,ACTIVE,1000,DV360
+16,Campaign LI Two,AWARENESS,ACTIVE,185,DV360
+17,Campaign LI Enough,AWARENESS,ACTIVE,1000,DV360
+18,Campaign LI Staff,AWARENESS,ACTIVE,1000,DV360
+19,Campaign LI Difference,AWARENESS,ACTIVE,1000,DV360
+20,Campaign LI Present,AWARENESS,ACTIVE,1000,DV360
+21,Campaign LI Visit,AWARENESS,ACTIVE,1000,DV360
+22,Campaign LI Magazine,AWARENESS,ACTIVE,1000,DV360
+23,Campaign LI Middle,AWARENESS,ACTIVE,1000,DV360
+24,Campaign LI Forward,AWARENESS,ACTIVE,1000,DV360
+25,Campaign LI Clear,AWARENESS,ACTIVE,1000,DV360
+26,Campaign LI Result,AWARENESS,ACTIVE,1000,DV360
+27,Campaign LI Land,AWARENESS,ACTIVE,1000,DV360
+28,Campaign LI Capital,AWARENESS,ACTIVE,1000,DV360
+29,Campaign LI Despite,AWARENESS,ACTIVE,1000,DV360
+30,Campaign LI Near,AWARENESS,ACTIVE,1000,DV360
+31,Campaign LI Soldier,AWARENESS,ACTIVE,1000,DV360
+32,Campaign LI Or,AWARENESS,ACTIVE,1000,DV360
+33,Campaign LI Real,AWARENESS,ACTIVE,1000,DV360
+34,Campaign LI Old,AWARENESS,ACTIVE,1000,DV360
+
+================================================================================
+
+================================================================================
+🎉 DEMO COMPLETE!
+================================================================================
+You've now seen all the key advertiser features:
+✅ Campaign creation with aggressive/defensive profiles
+✅ Performance analysis and comparison
+✅ Budget optimization and ROI projection
+✅ Creative testing and A/B testing
+✅ Performance forecasting and trend analysis
+✅ Data export and reporting
+
+Demo completed at: 2025-08-29 18:04:33.549921
+================================================================================

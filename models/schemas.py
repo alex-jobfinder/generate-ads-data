@@ -48,6 +48,7 @@ from .enums import (
     TargetingDefaults,
     TargetingKey,
     TransferFunction,
+    QAStatus,
     VideoCodecH264Profile,
     VideoCodecProresProfile,
 )
@@ -96,38 +97,72 @@ class Targeting(BaseModel):
                     f"age_range {rng} not in allowed buckets {list(TargetingDefaults.DEFAULT_AGE_RANGES)}"
                 )
 
+# # LEAVE COMMENTED OUT FOR NOW
+# class CreativeCreateOld(BaseModel):
+#     asset_url: str
+#     mime_type: CreativeMimeType
+#     # Expanded durations; keep tests compatible (15/30) while allowing others
+#     duration_seconds: int
+#     # Optional spec fields (v2+)
+#     placement: AdPlacement | None = None
+#     file_format: FileFormat | None = None
+#     width: int | None = None
+#     height: int | None = None
+#     frame_rate: FrameRate | None = None
+#     frame_rate_mode: FrameRateMode | None = None
+#     aspect_ratio: AspectRatio | None = None
+#     scan_type: ScanType | None = None
+#     video_codec_h264_profile: VideoCodecH264Profile | None = None
+#     video_codec_prores_profile: VideoCodecProresProfile | None = None
+#     chroma_subsampling: ChromaSubsampling | None = None
+#     color_primaries: ColorPrimaries | None = None
+#     transfer_function: TransferFunction | None = None
+#     bitrate_kbps: int | None = None
+#     file_size_bytes: int | None = None
+#     audio_codec: AudioCodec | None = None
+#     audio_channels: AudioChannels | None = None
+#     audio_sample_rate_hz: int | None = None
+#     audio_bit_depth: int | None = None
+#     safe_zone_ok: bool | None = None
+#     is_interactive: bool | None = None
+#     interactive_meta_json: Dict[str, Any] | None = None
+#     is_pause_ad: bool | None = None
+#     qr_code_url: str | None = None
+#     overlay_cta_text: str | None = Field(default=None, max_length=30)
+
+#     def model_post_init(self, __context: Any) -> None:
+#         # Non-negative checks
+#         if self.file_size_bytes is not None and self.file_size_bytes < 0:
+#             raise ValueError("file_size_bytes must be non-negative")
+#         if self.bitrate_kbps is not None and self.bitrate_kbps < 0:
+#             raise ValueError("bitrate_kbps must be non-negative")
+#         # LIVE placement requires 1920x1080 if provided
+#         if self.placement == AdPlacement.LIVE and (self.width is not None and self.height is not None):
+#             if not (self.width == 1920 and self.height == 1080):
+#                 raise ValueError("LIVE placement requires resolution 1920x1080")
+
 
 class CreativeCreate(BaseModel):
+    # Required Input Fields
     asset_url: str
     mime_type: CreativeMimeType
-    # Expanded durations; keep tests compatible (15/30) while allowing others
     duration_seconds: int
-    # Optional spec fields (v2+)
+    
+    # Optional Input Fields
+    name: str | None = None
+    qa_status: QAStatus | None = None
     placement: AdPlacement | None = None
     file_format: FileFormat | None = None
     width: int | None = None
     height: int | None = None
     frame_rate: FrameRate | None = None
-    frame_rate_mode: FrameRateMode | None = None
-    aspect_ratio: AspectRatio | None = None
-    scan_type: ScanType | None = None
-    video_codec_h264_profile: VideoCodecH264Profile | None = None
-    video_codec_prores_profile: VideoCodecProresProfile | None = None
-    chroma_subsampling: ChromaSubsampling | None = None
-    color_primaries: ColorPrimaries | None = None
-    transfer_function: TransferFunction | None = None
     bitrate_kbps: int | None = None
     file_size_bytes: int | None = None
-    audio_codec: AudioCodec | None = None
-    audio_channels: AudioChannels | None = None
-    audio_sample_rate_hz: int | None = None
-    audio_bit_depth: int | None = None
-    safe_zone_ok: bool | None = None
     is_interactive: bool | None = None
     interactive_meta_json: Dict[str, Any] | None = None
     is_pause_ad: bool | None = None
     qr_code_url: str | None = None
-    overlay_cta_text: str | None = Field(default=None, max_length=30)
+    overlay_cta_text: str | None = Field(default=None, max_length=64)
 
     def model_post_init(self, __context: Any) -> None:
         # Non-negative checks
@@ -201,6 +236,144 @@ class CampaignCreate(BaseModel):
 
 
 Targeting.model_rebuild()
+
+
+# ===== Denormalized Campaign Hierarchy Schema =====
+
+
+class AdvertiserColumnsSchemaMixin(BaseModel):
+    """Mixin providing advertiser-related fields for denormalized schemas."""
+    
+    advertiser_id: int
+    advertiser_name: str
+    advertiser_status: str
+    advertiser_created_at: datetime
+    advertiser_updated_at: datetime
+    brand: str | None = None
+    contact_email: str
+    agency_name: str | None = None
+
+
+class CampaignColumnsSchemaMixin(BaseModel):
+    """Mixin providing campaign-related fields for denormalized schemas."""
+    
+    campaign_id: int
+    campaign_name: str
+    campaign_status: str
+    campaign_created_at: datetime
+    campaign_updated_at: datetime
+    objective: str
+    currency: str
+    target_cpm: int
+    dsp_partner: str
+    programmatic_buy_type: str | None = None
+    programmatic_partner: str | None = None
+    content_adjacency_tier: str | None = None
+    brand_lift_enabled: int | None = None
+    attention_metrics_enabled: int | None = None
+    clean_room_provider: str | None = None
+    measurement_partner: str | None = None
+    external_ref: str | None = None
+
+
+class FlightColumnsSchemaMixin(BaseModel):
+    """Mixin providing flight-related fields for denormalized schemas."""
+    
+    flight_id: int
+    start_date: date
+    end_date: date
+    flight_created_at: datetime
+    flight_updated_at: datetime
+
+
+class BudgetColumnsSchemaMixin(BaseModel):
+    """Mixin providing budget-related fields for denormalized schemas."""
+    
+    budget_id: int
+    amount: int
+    budget_type: str
+    budget_currency: str
+    budget_created_at: datetime
+    budget_updated_at: datetime
+
+
+class LineItemColumnsSchemaMixin(BaseModel):
+    """Mixin providing line item-related fields for denormalized schemas."""
+    
+    line_item_id: int
+    line_item_name: str
+    line_item_status: str
+    line_item_created_at: datetime
+    line_item_updated_at: datetime
+    ad_format: str
+    bid_cpm: int
+    pacing_pct: int
+    targeting_json: str
+    device_targets_json: str | None = None
+    line_item_duration_seconds: int | None = None
+    ad_server_type: str | None = None
+    pixel_vendor: str | None = None
+    geo_tier: str | None = None
+
+
+class CreativeColumnsSchemaMixin(BaseModel):
+    """Mixin providing creative-related fields for denormalized schemas."""
+    
+    creative_id: int
+    creative_name: str | None = None
+    creative_status: str
+    creative_created_at: datetime
+    creative_updated_at: datetime
+    asset_url: str
+    mime_type: str
+    duration_seconds: int
+    qa_status: str | None = None
+    placement: str | None = None
+    file_format: str | None = None
+    width: int | None = None
+    height: int | None = None
+    frame_rate: str | None = None
+    bitrate_kbps: int | None = None
+    file_size_bytes: int | None = None
+    is_interactive: int | None = None
+    interactive_meta_json: str | None = None
+    is_pause_ad: int | None = None
+    qr_code_url: str | None = None
+    overlay_cta_text: str | None = None
+
+
+class CampaignHierarchyDenormSchema(
+    AdvertiserColumnsSchemaMixin,
+    CampaignColumnsSchemaMixin,
+    FlightColumnsSchemaMixin,
+    BudgetColumnsSchemaMixin,
+    LineItemColumnsSchemaMixin,
+    CreativeColumnsSchemaMixin,
+):
+    """
+    Schema for denormalized campaign hierarchy data.
+    
+    Uses mixins to inherit field definitions from existing entity schemas,
+    making it more maintainable and following the DRY principle.
+    """
+    
+    # JSON representation of entire hierarchy
+    campaign_hierarchy_json: str
+    
+    # Metadata
+    last_updated: datetime
+    
+    # Additional computed analytics fields (for the view)
+    flight_status: str | None = None  # COMPLETED, SCHEDULED, ACTIVE
+    budget_category: str | None = None  # LIFETIME, DAILY, OTHER
+    resolution_tier: str | None = None  # HD, SD, UHD+, CUSTOM
+    media_category: str | None = None  # VIDEO, IMAGE, AUDIO, OTHER
+    objective_group: str | None = None  # AWARENESS, CONSIDERATION, CONVERSION, OTHER
+    dsp_tier: str | None = None  # TIER_1, TIER_2, TIER_3
+    complexity_score: int | None = None  # 0-10 score based on creative features
+    days_since_update: int | None = None  # Days since last update
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ===== Performance Data Schemas =====

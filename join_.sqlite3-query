@@ -1,0 +1,99 @@
+-- database: ./ads.db
+
+
+SELECT 
+    json_object(
+        -- Advertiser columns (highest level)
+        'advertiser_id', adv.id,
+        'advertiser_name', adv.name,
+        'advertiser_status', adv.status,
+        'advertiser_created_at', adv.created_at,
+        'advertiser_updated_at', adv.updated_at,
+        'brand', adv.brand,
+        'contact_email', adv.contact_email,
+        'agency_name', adv.agency_name,
+        
+        -- Campaign columns
+        'campaign_id', camp.id,
+        'campaign_name', camp.name,
+        'campaign_status', camp.status,
+        'campaign_created_at', camp.created_at,
+        'campaign_updated_at', camp.updated_at,
+        'objective', camp.objective,
+        'currency', camp.currency,
+        'target_cpm', camp.target_cpm,
+        'dsp_partner', camp.dsp_partner,
+        'programmatic_buy_type', camp.programmatic_buy_type,
+        'programmatic_partner', camp.programmatic_partner,
+        'content_adjacency_tier', camp.content_adjacency_tier,
+        'brand_lift_enabled', camp.brand_lift_enabled,
+        'attention_metrics_enabled', camp.attention_metrics_enabled,
+        'clean_room_provider', camp.clean_room_provider,
+        'measurement_partner', camp.measurement_partner,
+        'external_ref', camp.external_ref,
+        
+        -- Flight columns
+        'flight_id', f.id,
+        'start_date', f.start_date,
+        'end_date', f.end_date,
+        'flight_created_at', f.created_at,
+        'flight_updated_at', f.updated_at,
+        
+        -- Budget columns
+        'budget_id', b.id,
+        'amount', b.amount,
+        'budget_type', b.type,
+        'budget_currency', b.currency,
+        'budget_created_at', b.created_at,
+        'budget_updated_at', b.updated_at,
+        
+        -- Line Item columns
+        'line_item_id', li.id,
+        'line_item_name', li.name,
+        'line_item_status', li.status,
+        'line_item_created_at', li.created_at,
+        'line_item_updated_at', li.updated_at,
+        'ad_format', li.ad_format,
+        'bid_cpm', li.bid_cpm,
+        'pacing_pct', li.pacing_pct,
+        'targeting_json', li.targeting_json,
+        'device_targets_json', li.device_targets_json,
+        'line_item_duration_seconds', li.duration_seconds,
+        'ad_server_type', li.ad_server_type,
+        'pixel_vendor', li.pixel_vendor,
+        'geo_tier', li.geo_tier,
+        
+        -- Creative (Ad) columns (lowest level)
+        'creative_id', c.id,
+        'creative_name', c.name,
+        'creative_status', c.status,
+        'creative_created_at', c.created_at,
+        'creative_updated_at', c.updated_at,
+        'asset_url', c.asset_url,
+        'mime_type', c.mime_type,
+        'duration_seconds', c.duration_seconds,
+        'qa_status', c.qa_status,
+        'placement', c.placement,
+        'file_format', c.file_format,
+        'width', c.width,
+        'height', c.height,
+        'frame_rate', c.frame_rate,
+        'bitrate_kbps', c.bitrate_kbps,
+        'file_size_bytes', c.file_size_bytes,
+        'is_interactive', c.is_interactive,
+        'interactive_meta_json', c.interactive_meta_json,
+        'is_pause_ad', c.is_pause_ad,
+        'qr_code_url', c.qr_code_url,
+        'overlay_cta_text', c.overlay_cta_text
+    ) as campaign_hierarchy_json
+
+    -- also select these columns separate here
+    
+FROM advertisers adv
+JOIN campaigns camp ON adv.id = camp.advertiser_id
+JOIN flights f ON camp.id = f.campaign_id
+JOIN budgets b ON camp.id = b.campaign_id
+JOIN line_items li ON camp.id = li.campaign_id
+JOIN creatives c ON li.id = c.line_item_id
+-- WHERE c.id = ?  -- Uncomment and replace ? with creative ID to filter
+ORDER BY adv.id, camp.id, f.id, b.id, li.id, c.id;
