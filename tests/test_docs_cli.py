@@ -6,16 +6,24 @@ import click
 import pytest
 
 
-def test_cli_registry_has_init_db() -> None:
-    """Verify Click has registered the 'init-db' command and its docstring."""
+def test_cli_registry_has_db_init() -> None:
+    """Verify grouped CLI exposes 'db init' and its docstring."""
     from cli import cli as root
 
-    ctx = click.Context(root)
-    commands = root.list_commands(ctx)
-    assert "init-db" in commands, "'init-db' should be registered on the root CLI"
+    root_ctx = click.Context(root)
+    root_commands = root.list_commands(root_ctx)
+    assert "db" in root_commands, "'db' group should be registered on the root CLI"
 
-    cmd = root.get_command(ctx, "init-db")
-    assert cmd is not None, "Click command object for 'init-db' not found"
+    db_group = root.get_command(root_ctx, "db")
+    assert isinstance(db_group, click.core.Group)
+
+    db_ctx = click.Context(db_group)
+    db_commands = db_group.list_commands(db_ctx)
+    assert "init" in db_commands, "'init' should be registered under 'db' group"
+
+    cmd = db_group.get_command(db_ctx, "init")
+    assert cmd is not None, "Click command object for 'db init' not found"
+    # The underlying callback docstring should still be descriptive
     assert cmd.callback.__doc__ and "Initialize a fresh database" in cmd.callback.__doc__
 
 

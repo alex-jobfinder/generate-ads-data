@@ -116,7 +116,7 @@ make deps
 ### **2. Initialize Database**
 ```bash
 make init-db
-# or: python cli.py init-db
+# or: python cli.py db init
 ```
 
 ### **3. Generate Complete Dataset**
@@ -135,16 +135,16 @@ make init-db
 ### **4. Individual Commands**
 ```bash
 # Create advertiser
-python cli.py create-advertiser --auto
+python cli.py campaign create-advertiser --auto
 
 # Create campaign
-python cli.py create-campaign --advertiser-id 1 --auto
+python cli.py campaign create --advertiser-id 1 --auto
 
 # Create from profile
-python cli.py create-profile --name high_cpm_tv_awareness
+python cli.py campaign create-profile --name high_cpm_tv_awareness
 
 # Create from example template
-python cli.py create-example --template cli_templates/examples/netflix-ads-examples.yml --example luxury_auto_awareness
+python cli.py campaign create-example --template cli_templates/examples/netflix-ads-examples.yml --example luxury_auto_awareness
 ```
 
 ### **5. Explore Your Data with SQLite3 Editor**

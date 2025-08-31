@@ -14,7 +14,7 @@ install: venv
 deps: install
 
 init-db: deps
-	$(PY) cli.py init-db
+	$(PY) cli.py db init
 
 setup: init-db
 	@echo "Environment ready."
@@ -23,10 +23,10 @@ setup: init-db
 run-config-seed: init-db
 	$(PY) cli.py create-from-config --path "config.yml" --generate-performance
 	@for i in $$(seq 1 5); do \
-	  ADV_ID=$$($(PY) -c 'import json,subprocess; p=subprocess.run(["$(PY)","cli.py","create-advertiser","--auto"], capture_output=True, text=True, check=True); print(json.loads(p.stdout)["advertiser_id"])'); \
+	  ADV_ID=$$($(PY) -c 'import json,subprocess; p=subprocess.run(["$(PY)","cli.py","campaign","create-advertiser","--auto"], capture_output=True, text=True, check=True); print(json.loads(p.stdout)["advertiser_id"])'); \
 	  echo "Created Advertiser $$i => ID=$$ADV_ID"; \
 	  for j in $$(seq 1 5); do \
-	    $(PY) cli.py create-campaign --advertiser-id $$ADV_ID --auto --generate-performance; \
+	    $(PY) cli.py campaign create --advertiser-id $$ADV_ID --auto --generate-performance; \
 	  done; \
 	  echo "---"; \
 	done
@@ -34,10 +34,10 @@ run-config-seed: init-db
 # Seed 5x5 without resetting DB (no init) - WITH performance generation
 seed-5x5-no-init: deps
 	@for i in $$(seq 1 5); do \
-	  ADV_ID=$$($(PY) -c 'import json,subprocess; p=subprocess.run(["$(PY)","cli.py","create-advertiser","--auto"], capture_output=True, text=True, check=True); print(json.loads(p.stdout)["advertiser_id"])'); \
+	  ADV_ID=$$($(PY) -c 'import json,subprocess; p=subprocess.run(["$(PY)","cli.py","campaign","create-advertiser","--auto"], capture_output=True, text=True, check=True); print(json.loads(p.stdout)["advertiser_id"])'); \
 	  echo "Created Advertiser $$i => ID=$$ADV_ID"; \
 	  for j in $$(seq 1 5); do \
-	    $(PY) cli.py create-campaign --advertiser-id $$ADV_ID --auto --generate-performance; \
+	    $(PY) cli.py campaign create --advertiser-id $$ADV_ID --auto --generate-performance; \
 	  done; \
 	  echo "---"; \
 	done
