@@ -198,6 +198,31 @@ Now that you've generated data, let's understand the database structure. The pla
 **Table Structure:**
 - **`advertisers`**: Company information, industry, brand details
 - **`campaigns`**: Campaign objectives, budgets, targeting, status
+ 
+## 📚 Documentation (Sphinx)
+
+Local usage
+- Install dev deps: `poetry install`
+- Live preview: `make docs-serve` (http://127.0.0.1:8000)
+- Build once: `make docs-html` (opens `docs/_build/html/index.html`)
+- Strict build (treat warnings as errors): `make docs-html-strict`
+
+What gets rendered
+- CLI help and options (sphinx-click): `docs/cli_commands.rst`
+- Python API (autodoc + Napoleon): `docs/api/cli.rst`
+
+Writing docs
+- Use Google-style (Napoleon) docstrings (Args, Returns, Raises, Examples).
+- New Click commands in `cli.py` show up automatically on the CLI page.
+- If you add heavy service modules, consider adding them to `autodoc_mock_imports` in `docs/conf.py` to keep builds fast and reliable.
+
+CI and production
+- CI builds docs and runs tests on push/PR: `.github/workflows/docs-ci.yml`.
+- When ready to publish docs:
+  1) Enable GitHub Pages in repo settings.
+  2) Add a deploy workflow that publishes `docs/_build/html` (see `docs/docs_guide.rst` for an example).
+
+More details: `docs/docs_guide.rst`.
 - **`line_items`**: Ad formats, placements, delivery settings, targeting JSON
 - **`creatives`**: Video specs, interactive elements, QA status, file properties
 - **`performance`**: Hourly metrics (impressions, clicks, spend, CTR, CPM)

@@ -34,28 +34,57 @@ from models.registry import registry
 from services.generator import create_advertiser_payload
 
 
-@click.group()
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+@click.version_option(package_name="generate-ads-data", prog_name="generate-ads-data")
 def cli() -> None:
-    """Root command group for ads demo utilities."""
+    """Root command group for ads demo utilities.
+
+    Use ``-h/--help`` on any command to see options and defaults.
+    """
     pass
 
 
 @cli.command("init-db")
-@click.option("--log-level", type=str, required=False)
-@click.option("--db-url", type=str, required=False)
-@click.option("--seed", type=int, required=False)
+@click.option("--log-level", type=str, required=False, help="Log verbosity (e.g., INFO, DEBUG).")
+@click.option("--db-url", type=str, required=False, help="Database URL (e.g., sqlite:///ads.db).")
+@click.option("--seed", type=int, required=False, help="Random seed for reproducible generation.")
 def cmd_init_db(log_level: Optional[str] = None, db_url: Optional[str] = None, seed: Optional[int] = None) -> None:
-    """Initialize a fresh database using the configured URL."""
+    """Initialize a fresh database using the configured URL.
+
+    Args:
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+        seed (int, optional): Random seed for reproducibility when generating data.
+
+    Returns:
+        None
+
+    Examples:
+        CLI:
+            $ python cli.py init-db --db-url sqlite:///ads.db --log-level INFO --seed 42
+    """
     setup_env(log_level, db_url, seed)
     init_db()
     get_logger(__name__).info("Initialized SQLite database")
 
 
 @cli.command("migrate-db")
-@click.option("--log-level", type=str, required=False)
-@click.option("--db-url", type=str, required=False)
+@click.option("--log-level", type=str, required=False, help="Log verbosity (e.g., INFO, DEBUG).")
+@click.option("--db-url", type=str, required=False, help="Database URL (e.g., sqlite:///ads.db).")
 def cmd_migrate_db(log_level: Optional[str] = None, db_url: Optional[str] = None) -> None:
-    """Apply database migrations for the current schema version."""
+    """Apply database migrations for the current schema version.
+
+    Args:
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+
+    Returns:
+        None
+
+    Examples:
+        CLI:
+            $ python cli.py migrate-db --db-url sqlite:///ads.db --log-level INFO
+    """
     setup_env(log_level, db_url)
     get_logger(__name__).info("Applying DB migrations")
     migrate_db()
@@ -63,14 +92,14 @@ def cmd_migrate_db(log_level: Optional[str] = None, db_url: Optional[str] = None
 
 
 @cli.command("create-advertiser")
-@click.option("--name", required=False, type=str)
-@click.option("--email", required=False, type=str)
-@click.option("--brand", required=False, type=str)
-@click.option("--agency", required=False, type=str)
-@click.option("--auto", is_flag=True, default=False)
-@click.option("--log-level", type=str, required=False)
-@click.option("--db-url", type=str, required=False)
-@click.option("--seed", type=int, required=False)
+@click.option("--name", required=False, type=str, help="Advertiser name (omit with --auto).")
+@click.option("--email", required=False, type=str, help="Contact email (omit with --auto).")
+@click.option("--brand", required=False, type=str, help="Brand name, if applicable.")
+@click.option("--agency", required=False, type=str, help="Agency name, if applicable.")
+@click.option("--auto", is_flag=True, default=False, help="Generate advertiser fields automatically.")
+@click.option("--log-level", type=str, required=False, help="Log verbosity (e.g., INFO, DEBUG).")
+@click.option("--db-url", type=str, required=False, help="Database URL (e.g., sqlite:///ads.db).")
+@click.option("--seed", type=int, required=False, help="Random seed for reproducible generation.")
 def cmd_create_advertiser(
     name: Optional[str],
     email: Optional[str],
@@ -81,7 +110,31 @@ def cmd_create_advertiser(
     db_url: Optional[str] = None,
     seed: Optional[int] = None,
 ) -> None:
-    """Create an advertiser; use --auto or provide name and email."""
+    """Create an advertiser; use --auto or provide name and email.
+
+    If ``--auto`` is set or required fields are missing, a realistic
+    advertiser is generated using faker providers.
+
+    Args:
+        name (str, optional): Advertiser name when not using ``--auto``.
+        email (str, optional): Contact email when not using ``--auto``.
+        brand (str, optional): Brand name, if applicable.
+        agency (str, optional): Agency name, if applicable.
+        auto (bool): Generate an advertiser automatically if true.
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+        seed (int, optional): Random seed for reproducibility.
+
+    Returns:
+        None. Prints a JSON object with the created ``advertiser_id`` to stdout.
+
+    Examples:
+        Auto-generated advertiser:
+            $ python cli.py create-advertiser --auto
+
+        Specify fields manually:
+            $ python cli.py create-advertiser --name "Acme" --email acct@acme.com
+    """
     setup_env(log_level, db_url, seed)
     if auto or not (name and email):
         n, e, b, a = fake_advertiser()
@@ -100,13 +153,22 @@ def cmd_create_advertiser(
 
 
 @cli.command("create-campaign")
-@click.option("--advertiser-id", required=True, type=int)
-@click.option("--auto", is_flag=True, default=False)
-@click.option("--profile", type=click.Choice(["AWARENESS", "CONSIDERATION", "CONVERSION"]))
-@click.option("--log-level", type=str, required=False)
-@click.option("--db-url", type=str, required=False)
-@click.option("--seed", type=int, required=False)
-@click.option("--generate-performance/--no-generate-performance", default=False, show_default=True)
+@click.option("--advertiser-id", required=True, type=int, help="ID of the advertiser that owns the campaign.")
+@click.option("--auto", is_flag=True, default=False, help="Generate a demo campaign automatically (required in v1).")
+@click.option(
+    "--profile",
+    type=click.Choice(["AWARENESS", "CONSIDERATION", "CONVERSION"]),
+    help="Optional campaign profile to guide generation.",
+)
+@click.option("--log-level", type=str, required=False, help="Log verbosity (e.g., INFO, DEBUG).")
+@click.option("--db-url", type=str, required=False, help="Database URL (e.g., sqlite:///ads.db).")
+@click.option("--seed", type=int, required=False, help="Random seed for reproducible generation.")
+@click.option(
+    "--generate-performance/--no-generate-performance",
+    default=False,
+    show_default=True,
+    help="Generate synthetic performance rows for the new campaign.",
+)
 def cmd_create_campaign(
     advertiser_id: Optional[int],
     auto: bool,
@@ -116,7 +178,32 @@ def cmd_create_campaign(
     seed: Optional[int] = None,
     generate_performance: bool = False,
 ) -> None:
-    """Create a demo campaign for an advertiser; requires --auto for v1."""
+    """Create a demo campaign for an advertiser; requires ``--auto`` for v1.
+
+    Persists a demo campaign for the given advertiser. When
+    ``--generate-performance`` is provided, synthetic hourly performance is
+    generated for the new campaign.
+
+    Args:
+        advertiser_id (int): The advertiser ID to attach the campaign to.
+        auto (bool): Must be true for v1; generates a demo campaign.
+        profile (ProfileName, optional): Campaign profile (AWARENESS, CONSIDERATION, CONVERSION).
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+        seed (int, optional): Random seed for reproducibility.
+        generate_performance (bool): Generate performance rows for the new campaign.
+
+    Returns:
+        None
+
+    Raises:
+        click.UsageError: If ``--auto`` is not provided.
+
+    Examples:
+        Create campaign and performance:
+            $ python cli.py create-campaign --advertiser-id 1 --auto \
+                --profile AWARENESS --generate-performance
+    """
     setup_env(log_level, db_url, seed)
     if not auto:
         raise click.UsageError("For v1, use --auto to generate a demo campaign")
@@ -129,21 +216,57 @@ def cmd_create_campaign(
 
 
 @cli.command("generate-performance")
-@click.option("--campaign-id", required=True, type=int)
-@click.option("--seed", required=False, type=int)
-@click.option("--replace/--no-replace", default=True, show_default=True)
+@click.option("--campaign-id", required=True, type=int, help="Campaign ID to generate performance for.")
+@click.option("--seed", required=False, type=int, help="Random seed for reproducibility.")
+@click.option(
+    "--replace/--no-replace",
+    default=True,
+    show_default=True,
+    help="Replace existing rows if present.",
+)
 def cmd_generate_performance(campaign_id: int, seed: Optional[int] = None, replace: bool = True) -> None:
-    """Generate synthetic hourly performance rows for a campaign."""
+    """Generate synthetic hourly performance rows for a campaign.
+
+    Args:
+        campaign_id (int): Campaign identifier.
+        seed (int, optional): Random seed for reproducibility.
+        replace (bool): If true, existing rows are replaced.
+
+    Returns:
+        None. Prints a JSON summary of generated performance rows.
+
+    Examples:
+        CLI:
+            $ python cli.py generate-performance --campaign-id 42 --seed 123 --no-replace
+    """
     result = generate_performance(campaign_id, seed=seed, replace=replace)
     print(json.dumps(result))
 
 
 @cli.command("generate-performance-ext")
-@click.option("--campaign-id", required=True, type=int)
-@click.option("--seed", required=False, type=int)
-@click.option("--replace/--no-replace", default=True, show_default=True)
+@click.option("--campaign-id", required=True, type=int, help="Campaign ID to generate extended performance for.")
+@click.option("--seed", required=False, type=int, help="Random seed for reproducibility.")
+@click.option(
+    "--replace/--no-replace",
+    default=True,
+    show_default=True,
+    help="Replace existing rows if present.",
+)
 def cmd_generate_performance_ext(campaign_id: int, seed: Optional[int] = None, replace: bool = True) -> None:
-    """Generate synthetic hourly extended performance rows for a campaign."""
+    """Generate synthetic hourly extended performance rows for a campaign.
+
+    Args:
+        campaign_id (int): Campaign identifier.
+        seed (int, optional): Random seed for reproducibility.
+        replace (bool): If true, existing rows are replaced.
+
+    Returns:
+        None. Prints a JSON object describing the result to stdout.
+
+    Examples:
+        CLI:
+            $ python cli.py generate-performance-ext --campaign-id 42 --seed 7
+    """
     from services.performance_ext import generate_hourly_performance_ext
 
     rows = generate_hourly_performance_ext(campaign_id, seed=seed, replace=True)
@@ -170,7 +293,27 @@ def cmd_create_example(
     log_level: Optional[str] = None,
     db_url: Optional[str] = None,
 ) -> None:
-    """Create complete Netflix ads example from template with auto-performance generation."""
+    """Create a complete example from a template, optionally generating performance.
+
+    Args:
+        template (str): Path to the template file to use.
+        example (str): Name for the example to generate.
+        seed (int, optional): Random seed for reproducibility.
+        performance_only (bool): Only generate performance for existing entities.
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+
+    Returns:
+        None. Prints a JSON summary of created entities.
+
+    Raises:
+        click.UsageError: If the example processor is not available.
+
+    Examples:
+        CLI:
+            $ python cli.py create-example --template examples/netflix.yml \
+                --example my-demo --seed 123
+    """
     setup_env(log_level, db_url, seed)
 
     try:
@@ -201,7 +344,27 @@ def cmd_test_fields(
     log_level: Optional[str] = None,
     db_url: Optional[str] = None,
 ) -> None:
-    """Test specific fields while auto-generating realistic context."""
+    """Test specific fields while auto-generating realistic context.
+
+    Args:
+        template (str): Path to the field-testing template file.
+        focus (str): Comma-separated list of fields to test (e.g., "name,budget").
+        seed (int, optional): Random seed for reproducibility.
+        auto_performance (bool): Auto-generate performance data in the scenario.
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+
+    Returns:
+        None. Prints a JSON result of the field tests.
+
+    Raises:
+        click.UsageError: If the test processor is not available.
+
+    Examples:
+        CLI:
+            $ python cli.py test-fields --template tests/fields.yml \
+                --focus name,budget --no-auto-performance
+    """
     setup_env(log_level, db_url, seed)
 
     try:
@@ -233,7 +396,27 @@ def cmd_create_profile(
     log_level: Optional[str] = None,
     db_url: Optional[str] = None,
 ) -> None:
-    """Create campaign from pre-built profile with smart defaults."""
+    """Create a campaign from a pre-built profile with smart defaults.
+
+    Args:
+        name (str): Profile name from ``campaign-profiles.yml``.
+        test_fields (str, optional): Comma-separated key=value overrides.
+        seed (int, optional): Random seed for reproducibility.
+        performance_only (bool): Only create performance data for existing entities.
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+
+    Returns:
+        None. Prints a JSON summary of the created campaign.
+
+    Raises:
+        click.UsageError: If the profile processor is not available.
+
+    Examples:
+        CLI with overrides:
+            $ python cli.py create-profile --name AWARENESS_MINI \
+                --test-fields "budget=5000,status=PAUSED"
+    """
     setup_env(log_level, db_url, seed)
 
     try:
@@ -260,12 +443,29 @@ def cmd_create_profile(
 @cli.command("test-scenario")
 @click.option("--name", required=True, type=str, help="Scenario name from testing-scenarios.yml")
 @click.option("--seed", type=int, help="Seed for reproducible generation")
-@click.option("--log-level", type=str, required=False)
-@click.option("--db-url", type=str, required=False)
+@click.option("--log-level", type=str, required=False, help="Log verbosity (e.g., INFO, DEBUG).")
+@click.option("--db-url", type=str, required=False, help="Database URL (e.g., sqlite:///ads.db).")
 def cmd_test_scenario(
     name: str, seed: Optional[int] = None, log_level: Optional[str] = None, db_url: Optional[str] = None
 ) -> None:
-    """Test common scenarios with one command."""
+    """Test common scenarios with one command.
+
+    Args:
+        name (str): Scenario name from ``testing-scenarios.yml``.
+        seed (int, optional): Random seed for reproducibility.
+        log_level (str, optional): Log verbosity (e.g., "INFO", "DEBUG").
+        db_url (str, optional): Database URL such as "sqlite:///ads.db".
+
+    Returns:
+        None. Prints a JSON result for the scenario.
+
+    Raises:
+        click.UsageError: If the scenario processor is not available.
+
+    Examples:
+        CLI:
+            $ python cli.py test-scenario --name invalid-targeting --seed 99
+    """
     setup_env(log_level, db_url, seed)
 
     try:
@@ -286,7 +486,23 @@ def cmd_test_scenario(
 @click.option("--objective", type=str, help="Filter by campaign objective")
 @click.option("--status", type=str, help="Filter by campaign status")
 def cmd_list_campaigns(format: str, objective: Optional[str] = None, status: Optional[str] = None) -> None:
-    """List all campaigns with optional filtering."""
+    """List all campaigns with optional filtering.
+
+    Args:
+        format (str): Output format: "table" (default), "json", or "csv".
+        objective (str, optional): Filter by objective (e.g., AWARENESS).
+        status (str, optional): Filter by status (e.g., ACTIVE, PAUSED).
+
+    Returns:
+        None. Prints the campaign list in the requested format.
+
+    Examples:
+        Table output:
+            $ python cli.py list-campaigns
+
+        JSON output with filters:
+            $ python cli.py list-campaigns --format json --objective AWARENESS --status ACTIVE
+    """
     try:
         # Try to import the service first
         from services.campaign_service import list_campaigns
@@ -391,7 +607,20 @@ def cmd_list_campaigns(format: str, objective: Optional[str] = None, status: Opt
 @click.option("--format", type=click.Choice(["json", "csv", "excel"]), default="json", help="Export format")
 @click.option("--include-performance/--no-include-performance", default=True, show_default=True, help="Include performance data")
 def cmd_export_campaign(id: int, format: str, include_performance: bool) -> None:
-    """Export campaign data in various formats."""
+    """Export campaign data in various formats.
+
+    Args:
+        id (int): Campaign ID to export.
+        format (str): Export format: "json", "csv", or "excel" (service-only).
+        include_performance (bool): Include performance rows when true.
+
+    Returns:
+        None. Prints the exported representation to stdout.
+
+    Examples:
+        JSON export including performance:
+            $ python cli.py export-campaign --id 12 --format json --include-performance
+    """
     try:
         from services.export_service import export_campaign
         result = export_campaign(id, format, include_performance)
@@ -496,7 +725,20 @@ def cmd_export_campaign(id: int, format: str, include_performance: bool) -> None
 @click.option("--campaign2", required=True, type=int, help="Second campaign ID")
 @click.option("--metrics", type=str, default="cpm,ctr,conversion,roi", help="Comma-separated metrics to compare")
 def cmd_compare_campaigns(campaign1: int, campaign2: int, metrics: str) -> None:
-    """Compare two campaigns side-by-side."""
+    """Compare two campaigns side-by-side.
+
+    Args:
+        campaign1 (int): First campaign ID.
+        campaign2 (int): Second campaign ID.
+        metrics (str): Comma-separated metrics to compare (e.g., "cpm,ctr,conversion,roi").
+
+    Returns:
+        None. Prints a JSON comparison summary.
+
+    Examples:
+        CLI:
+            $ python cli.py compare-campaigns --campaign1 1 --campaign2 2 --metrics cpm,ctr
+    """
     try:
         from services.comparison_service import compare_campaigns
         metric_list = [m.strip() for m in metrics.split(",")]
@@ -563,7 +805,19 @@ def cmd_compare_campaigns(campaign1: int, campaign2: int, metrics: str) -> None:
 @click.option("--objective", required=True, type=str, help="Campaign objective to compare")
 @click.option("--top-n", type=int, default=5, help="Number of top campaigns to show")
 def cmd_compare_by_objective(objective: str, top_n: int) -> None:
-    """Compare campaigns by objective type."""
+    """Compare campaigns by objective type.
+
+    Args:
+        objective (str): Objective to compare (e.g., AWARENESS).
+        top_n (int): Number of top campaigns to include.
+
+    Returns:
+        None. Prints a JSON summary of the top campaigns.
+
+    Examples:
+        CLI:
+            $ python cli.py compare-by-objective --objective CONVERSION --top-n 5
+    """
     try:
         from services.comparison_service import compare_by_objective
         result = compare_by_objective(objective, top_n)
@@ -625,7 +879,20 @@ def cmd_compare_by_objective(objective: str, top_n: int) -> None:
 @click.option("--objective", required=True, type=str, help="Campaign objective")
 @click.option("--target-impressions", type=int, help="Target impression count")
 def cmd_optimize_cpm(budget: float, objective: str, target_impressions: Optional[int] = None) -> None:
-    """Find optimal CPM for your budget and objective."""
+    """Find an optimal CPM for a given budget and objective.
+
+    Args:
+        budget (float): Total campaign budget.
+        objective (str): Campaign objective (e.g., AWARENESS).
+        target_impressions (int, optional): Target number of impressions.
+
+    Returns:
+        None. Prints a JSON recommendation for CPM and expected outcomes.
+
+    Examples:
+        CLI:
+            $ python cli.py optimize-cpm --budget 10000 --objective AWARENESS --target-impressions 500000
+    """
     try:
         from services.optimization_service import optimize_cpm
         result = optimize_cpm(budget, objective, target_impressions)
@@ -652,7 +919,20 @@ def cmd_optimize_cpm(budget: float, objective: str, target_impressions: Optional
 @click.option("--scenarios", type=int, default=3, help="Number of scenarios to generate")
 @click.option("--optimistic", is_flag=True, default=False, help="Include optimistic scenario")
 def cmd_project_roi(campaign_id: int, scenarios: int, optimistic: bool) -> None:
-    """Calculate ROI projections for a campaign."""
+    """Calculate ROI projections for a campaign.
+
+    Args:
+        campaign_id (int): Campaign ID to project ROI for.
+        scenarios (int): Number of scenarios to generate.
+        optimistic (bool): Include an optimistic scenario when true.
+
+    Returns:
+        None. Prints a JSON array of ROI scenarios.
+
+    Examples:
+        CLI:
+            $ python cli.py project-roi --campaign-id 7 --scenarios 3 --optimistic
+    """
     try:
         from services.forecasting_service import project_roi
         result = project_roi(campaign_id, scenarios, optimistic)
@@ -678,7 +958,20 @@ def cmd_project_roi(campaign_id: int, scenarios: int, optimistic: bool) -> None:
 @click.option("--duration", type=int, help="Duration in seconds")
 @click.option("--interactive", is_flag=True, default=False, help="Test interactive elements")
 def cmd_test_creative(format: str, duration: Optional[int] = None, interactive: bool = False) -> None:
-    """Test different creative formats and configurations."""
+    """Test different creative formats and configurations.
+
+    Args:
+        format (str): Creative format to test (e.g., video, display).
+        duration (int, optional): Duration in seconds for time-based formats.
+        interactive (bool): Whether to test interactive elements.
+
+    Returns:
+        None. Prints test recommendations and outcomes as JSON.
+
+    Examples:
+        CLI:
+            $ python cli.py test-creative --format video --duration 30 --interactive
+    """
     try:
         from services.creative_service import test_creative
         result = test_creative(format, duration, interactive)
@@ -702,7 +995,20 @@ def cmd_test_creative(format: str, duration: Optional[int] = None, interactive: 
 @click.option("--variant-b", required=True, type=str, help="Second variant name")
 @click.option("--test-duration", type=int, default=14, help="Test duration in days")
 def cmd_ab_test(variant_a: str, variant_b: str, test_duration: int) -> None:
-    """Set up A/B testing between two campaign variants."""
+    """Set up A/B testing between two campaign variants.
+
+    Args:
+        variant_a (str): First variant name or identifier.
+        variant_b (str): Second variant name or identifier.
+        test_duration (int): Test duration in days.
+
+    Returns:
+        None. Prints a JSON test setup or instructions.
+
+    Examples:
+        CLI:
+            $ python cli.py ab-test --variant-a A --variant-b B --test-duration 14
+    """
     try:
         from services.ab_testing_service import setup_ab_test
         result = setup_ab_test(variant_a, variant_b, test_duration)
@@ -727,7 +1033,20 @@ def cmd_ab_test(variant_a: str, variant_b: str, test_duration: int) -> None:
 @click.option("--days", type=int, default=30, help="Forecast period in days")
 @click.option("--include-seasonal/--no-include-seasonal", default=True, show_default=True, help="Include seasonal adjustments")
 def cmd_forecast(campaign_id: int, days: int, include_seasonal: bool) -> None:
-    """Predict campaign performance over time."""
+    """Predict campaign performance over a specified horizon.
+
+    Args:
+        campaign_id (int): Campaign ID to forecast.
+        days (int): Forecast period in days.
+        include_seasonal (bool): Include seasonal adjustments when true.
+
+    Returns:
+        None. Prints a JSON forecast of key metrics.
+
+    Examples:
+        CLI:
+            $ python cli.py forecast --campaign-id 3 --days 30 --include-seasonal
+    """
     try:
         from services.forecasting_service import forecast_performance
         result = forecast_performance(campaign_id, days, include_seasonal)
@@ -751,7 +1070,19 @@ def cmd_forecast(campaign_id: int, days: int, include_seasonal: bool) -> None:
 @click.option("--campaign-id", required=True, type=int, help="Campaign ID to analyze")
 @click.option("--period", type=int, default=90, help="Analysis period in days")
 def cmd_seasonal_trends(campaign_id: int, period: int) -> None:
-    """Analyze seasonal performance trends."""
+    """Analyze seasonal performance trends for a campaign.
+
+    Args:
+        campaign_id (int): Campaign ID to analyze.
+        period (int): Analysis period in days.
+
+    Returns:
+        None. Prints a JSON report of seasonal patterns.
+
+    Examples:
+        CLI:
+            $ python cli.py seasonal-trends --campaign-id 3 --period 90
+    """
     try:
         from services.analytics_service import analyze_seasonal_trends
         result = analyze_seasonal_trends(campaign_id, period)
@@ -775,7 +1106,21 @@ def cmd_seasonal_trends(campaign_id: int, period: int) -> None:
 @click.option("--seed", type=int, help="Random seed for reproducible variations")
 @click.option("--output-format", type=click.Choice(["json", "csv"]), default="json", help="Output format")
 def cmd_create_variations(template: str, custom_rules: Optional[str], seed: Optional[int], output_format: str) -> None:
-    """Create automated campaign variations from a template."""
+    """Create automated campaign variations from a template.
+
+    Args:
+        template (str): Template name to use.
+        custom_rules (str, optional): JSON string of custom variation rules.
+        seed (int, optional): Random seed for reproducible variation generation.
+        output_format (str): Output format: "json" or "csv".
+
+    Returns:
+        None. Prints the generated variations in the requested format.
+
+    Examples:
+        CLI:
+            $ python cli.py create-variations --template baseline --output-format csv
+    """
     try:
         from services.campaign_variation_service import EnhancedCampaignVariationService
         
@@ -820,7 +1165,18 @@ def cmd_create_variations(template: str, custom_rules: Optional[str], seed: Opti
 @cli.command("list-templates")
 @click.option("--output-format", type=click.Choice(["json", "table"]), default="table", help="Output format")
 def cmd_list_templates(output_format: str) -> None:
-    """List available campaign variation templates."""
+    """List available campaign variation templates.
+
+    Args:
+        output_format (str): Output format: "json" or "table".
+
+    Returns:
+        None. Prints available templates in the requested format.
+
+    Examples:
+        CLI:
+            $ python cli.py list-templates --output-format json
+    """
     try:
         from services.campaign_variation_service import EnhancedCampaignVariationService
         
@@ -861,7 +1217,15 @@ def cmd_list_templates(output_format: str) -> None:
 
 @cli.command("show-schemas")
 def cmd_show_schemas() -> None:
-    """Show all database schemas and table structures."""
+    """Show all database schemas and table structures.
+
+    Returns:
+        None. Prints schema information to stdout.
+
+    Examples:
+        CLI:
+            $ python cli.py show-schemas
+    """
     try:
         from services.erd_service import print_all_schemas
         print_all_schemas()
@@ -873,7 +1237,15 @@ def cmd_show_schemas() -> None:
 
 @cli.command("status")
 def cmd_status() -> None:
-    """Check system status and database health."""
+    """Check system status and database health.
+
+    Returns:
+        None. Prints a JSON object summarizing database and system status.
+
+    Examples:
+        CLI:
+            $ python cli.py status
+    """
     import os
     import sqlite3
     

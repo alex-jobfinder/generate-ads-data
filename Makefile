@@ -2,7 +2,7 @@ VENV := .venv
 PY := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 
-.PHONY: venv install deps setup init-db run-config-seed seed-5x5-no-init clean test dbt-seed dbt-run dbt-run-staging dbt-run-marts dbt-test dbt-test-model dbt-pipeline dbt-fresh clean-dbt dbt-debug dbt-list dbt-show query-db
+.PHONY: venv install deps setup init-db run-config-seed seed-5x5-no-init clean test dbt-seed dbt-run dbt-run-staging dbt-run-marts dbt-test dbt-test-model dbt-pipeline dbt-fresh clean-dbt dbt-debug dbt-list dbt-show query-db docs-html docs-serve docs-html-strict docs-serve-fresh
 
 venv:
 	python3 -m venv $(VENV)
@@ -153,3 +153,34 @@ dbt-show:
 query-db:
 	@echo "🔍 Running DuckDB Analysis..."
 	cd dbt_ads_project && python query_duckdb.py
+
+# =============================================================================
+# Documentation (Sphinx)
+# =============================================================================
+
+docs-html:
+	@echo "📚 Building Sphinx HTML docs..."
+	poetry run make -C docs html
+	@echo "✅ Docs built: docs/_build/html/index.html"
+
+docs-serve:
+	@echo "🌐 Starting Sphinx live server on http://127.0.0.1:8000 ..."
+	poetry run make -C docs serve
+
+docs-html-strict:
+	@echo "📚 Building Sphinx HTML docs with warnings as errors..."
+	poetry run make -C docs html-strict
+
+docs-serve-fresh:
+	@echo "🔪 Freeing port 8000 (if in use) and launching live docs..."
+	@# Try fuser first, fall back to lsof if available
+	-@if command -v fuser >/dev/null 2>&1; then \
+	  fuser -k 8000/tcp || true; \
+	elif command -v lsof >/dev/null 2>&1; then \
+	  PIDS=$$(lsof -ti tcp:8000); \
+	  if [ -n "$$PIDS" ]; then kill -9 $$PIDS || true; fi; \
+	else \
+	  echo "ℹ️  Neither fuser nor lsof found; continuing without freeing port."; \
+	fi
+	@echo "🌐 Opening http://127.0.0.1:8000 ..."
+	poetry run make -C docs serve AUTOBUILD="sphinx-autobuild --open-browser"

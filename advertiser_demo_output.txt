@@ -1,7 +1,7 @@
 🎯 Netflix Ads Data Generator - Advertiser Demo Output
 ================================================================================
 This file contains the complete output from all demo commands
-Generated on: 2025-08-29 18:04:24.161874
+Generated on: 2025-08-31 13:24:08.446036
 ================================================================================
 
 
@@ -10,10 +10,10 @@ Generated on: 2025-08-29 18:04:24.161874
 Command: python cli.py create-profile --name high_cpm_tv_awareness
 ✅ Success!
 Output:
-{"campaign_id": 33, "line_item_id": 33, "advertiser_id": 33}
+{"campaign_id": 26, "line_item_id": 26, "advertiser_id": 23}
 {
-  "advertiser_id": 33,
-  "campaign_id": 33,
+  "advertiser_id": 23,
+  "campaign_id": 26,
   "line_item_ids": [
     1
   ],
@@ -28,10 +28,10 @@ Output:
 Command: python cli.py create-profile --name mobile_consideration
 ✅ Success!
 Output:
-{"campaign_id": 34, "line_item_id": 34, "advertiser_id": 34}
+{"campaign_id": 27, "line_item_id": 27, "advertiser_id": 24}
 {
-  "advertiser_id": 34,
-  "campaign_id": 34,
+  "advertiser_id": 24,
+  "campaign_id": 27,
   "line_item_ids": [
     1
   ],
@@ -53,37 +53,30 @@ ID   Name                      Objective       Status     CPM      DSP
 1    EV Awareness Launch       AWARENESS       ACTIVE     $1,550   DV360       
 2    New Flavor Consideration  AWARENESS       ACTIVE     $1,275   DV360       
 3    App Acquisition Q4        AWARENESS       ACTIVE     $1,825   DV360       
-4    Campaign LI A             AWARENESS       ACTIVE     $730     DV360       
-5    Campaign LI Worker        AWARENESS       ACTIVE     $1,000   DV360       
-6    Campaign LI Eye           AWARENESS       ACTIVE     $1,000   DV360       
-7    Campaign LI Financial     AWARENESS       ACTIVE     $1,000   DV360       
-8    Campaign LI Task          AWARENESS       ACTIVE     $1,000   DV360       
-9    Campaign LI Republican    AWARENESS       ACTIVE     $1,000   DV360       
-10   Campaign LI Research      AWARENESS       ACTIVE     $1,000   DV360       
-11   Campaign LI Order         AWARENESS       ACTIVE     $1,000   DV360       
-12   Campaign LI Suggest       AWARENESS       ACTIVE     $10      DV360       
-13   Campaign LI Second        AWARENESS       ACTIVE     $1,000   DV360       
-14   Campaign LI General       AWARENESS       ACTIVE     $1,000   DV360       
-15   Campaign LI National      AWARENESS       ACTIVE     $1,000   DV360       
-16   Campaign LI Two           AWARENESS       ACTIVE     $185     DV360       
-17   Campaign LI Enough        AWARENESS       ACTIVE     $1,000   DV360       
-18   Campaign LI Staff         AWARENESS       ACTIVE     $1,000   DV360       
-19   Campaign LI Difference    AWARENESS       ACTIVE     $1,000   DV360       
-20   Campaign LI Present       AWARENESS       ACTIVE     $1,000   DV360       
-21   Campaign LI Visit         AWARENESS       ACTIVE     $1,000   DV360       
-22   Campaign LI Magazine      AWARENESS       ACTIVE     $1,000   DV360       
-23   Campaign LI Middle        AWARENESS       ACTIVE     $1,000   DV360       
-24   Campaign LI Forward       AWARENESS       ACTIVE     $1,000   DV360       
-25   Campaign LI Clear         AWARENESS       ACTIVE     $1,000   DV360       
-26   Campaign LI Result        AWARENESS       ACTIVE     $1,000   DV360       
-27   Campaign LI Land          AWARENESS       ACTIVE     $1,000   DV360       
-28   Campaign LI Capital       AWARENESS       ACTIVE     $1,000   DV360       
-29   Campaign LI Despite       AWARENESS       ACTIVE     $1,000   DV360       
-30   Campaign LI Near          AWARENESS       ACTIVE     $1,000   DV360       
-31   Campaign LI Soldier       AWARENESS       ACTIVE     $1,000   DV360       
-32   Campaign LI Or            AWARENESS       ACTIVE     $1,000   DV360       
-33   Campaign LI Real          AWARENESS       ACTIVE     $1,000   DV360       
-34   Campaign LI Old           AWARENESS       ACTIVE     $1,000   DV360       
+4    Campaign LI Government    AWARENESS       ACTIVE     $1,000   DV360       
+5    Campaign LI Include       AWARENESS       ACTIVE     $1,000   DV360       
+6    Campaign LI Necessary     AWARENESS       ACTIVE     $1,000   DV360       
+7    Campaign LI White         AWARENESS       ACTIVE     $1,000   DV360       
+8    Campaign LI Cut           AWARENESS       ACTIVE     $1,000   DV360       
+9    Campaign LI Wonder        AWARENESS       ACTIVE     $10      DV360       
+10   Campaign LI Nor           AWARENESS       ACTIVE     $1,000   DV360       
+11   Campaign LI Should        AWARENESS       ACTIVE     $1,000   DV360       
+12   EV Awareness Launch       AWARENESS       ACTIVE     $1,550   DV360       
+13   New Flavor Consideration  AWARENESS       ACTIVE     $1,275   DV360       
+14   App Acquisition Q4        AWARENESS       ACTIVE     $1,825   DV360       
+15   Campaign LI Our           AWARENESS       ACTIVE     $1,000   DV360       
+16   Campaign LI Use           AWARENESS       ACTIVE     $1,000   DV360       
+17   Campaign LI Series        AWARENESS       ACTIVE     $1,000   DV360       
+18   Campaign LI Organization  AWARENESS       ACTIVE     $1,000   DV360       
+19   Campaign LI Middle        AWARENESS       ACTIVE     $1,000   DV360       
+20   Campaign LI Movie         AWARENESS       ACTIVE     $1,000   DV360       
+21   Campaign LI Public        AWARENESS       ACTIVE     $1,000   DV360       
+22   Campaign LI Key           AWARENESS       ACTIVE     $1,000   DV360       
+23   Campaign LI Against       AWARENESS       ACTIVE     $1,000   DV360       
+24   Campaign LI Management    AWARENESS       ACTIVE     $1,000   DV360       
+25   Campaign LI Human         AWARENESS       ACTIVE     $1,000   DV360       
+26   Campaign LI Mention       AWARENESS       ACTIVE     $1,000   DV360       
+27   Campaign LI Art           AWARENESS       ACTIVE     $1,000   DV360       
 
 ================================================================================
 
@@ -95,17 +88,17 @@ Output:
 {
   "database": {
     "status": "healthy",
-    "size_mb": 38.8
+    "size_mb": 22.12
   },
   "system": {
     "python_version": "3.10.9",
     "working_directory": "/home/alex/dbt_ads/generate-ads-data"
   },
   "campaigns": {
-    "advertisers": 34,
-    "campaigns": 34,
-    "line_items": 34,
-    "creatives": 34,
+    "advertisers": 24,
+    "campaigns": 27,
+    "line_items": 27,
+    "creatives": 27,
     "performance": 0
   }
 }
@@ -129,16 +122,16 @@ Output:
       "dsp_partner": "DV360"
     },
     {
-      "id": 1,
-      "name": "EV Awareness Launch",
-      "target_cpm": 1550,
+      "id": 14,
+      "name": "App Acquisition Q4",
+      "target_cpm": 1825,
       "status": "ACTIVE",
       "dsp_partner": "DV360"
     },
     {
-      "id": 2,
-      "name": "New Flavor Consideration",
-      "target_cpm": 1275,
+      "id": 1,
+      "name": "EV Awareness Launch",
+      "target_cpm": 1550,
       "status": "ACTIVE",
       "dsp_partner": "DV360"
     }
@@ -359,8 +352,8 @@ Output:
   "campaign_data": {
     "name": "EV Awareness Launch",
     "status": "ACTIVE",
-    "created_at": "2025-08-29 23:46:27",
-    "updated_at": "2025-08-29 23:46:27",
+    "created_at": "2025-08-30 02:33:28",
+    "updated_at": "2025-08-30 02:33:28",
     "objective": "AWARENESS",
     "currency": "USD",
     "target_cpm": 1550,
@@ -384,37 +377,30 @@ ID,Name,Objective,Status,Target CPM,DSP Partner
 1,EV Awareness Launch,AWARENESS,ACTIVE,1550,DV360
 2,New Flavor Consideration,AWARENESS,ACTIVE,1275,DV360
 3,App Acquisition Q4,AWARENESS,ACTIVE,1825,DV360
-4,Campaign LI A,AWARENESS,ACTIVE,730,DV360
-5,Campaign LI Worker,AWARENESS,ACTIVE,1000,DV360
-6,Campaign LI Eye,AWARENESS,ACTIVE,1000,DV360
-7,Campaign LI Financial,AWARENESS,ACTIVE,1000,DV360
-8,Campaign LI Task,AWARENESS,ACTIVE,1000,DV360
-9,Campaign LI Republican,AWARENESS,ACTIVE,1000,DV360
-10,Campaign LI Research,AWARENESS,ACTIVE,1000,DV360
-11,Campaign LI Order,AWARENESS,ACTIVE,1000,DV360
-12,Campaign LI Suggest,AWARENESS,ACTIVE,10,DV360
-13,Campaign LI Second,AWARENESS,ACTIVE,1000,DV360
-14,Campaign LI General,AWARENESS,ACTIVE,1000,DV360
-15,Campaign LI National,AWARENESS,ACTIVE,1000,DV360
-16,Campaign LI Two,AWARENESS,ACTIVE,185,DV360
-17,Campaign LI Enough,AWARENESS,ACTIVE,1000,DV360
-18,Campaign LI Staff,AWARENESS,ACTIVE,1000,DV360
-19,Campaign LI Difference,AWARENESS,ACTIVE,1000,DV360
-20,Campaign LI Present,AWARENESS,ACTIVE,1000,DV360
-21,Campaign LI Visit,AWARENESS,ACTIVE,1000,DV360
-22,Campaign LI Magazine,AWARENESS,ACTIVE,1000,DV360
-23,Campaign LI Middle,AWARENESS,ACTIVE,1000,DV360
-24,Campaign LI Forward,AWARENESS,ACTIVE,1000,DV360
-25,Campaign LI Clear,AWARENESS,ACTIVE,1000,DV360
-26,Campaign LI Result,AWARENESS,ACTIVE,1000,DV360
-27,Campaign LI Land,AWARENESS,ACTIVE,1000,DV360
-28,Campaign LI Capital,AWARENESS,ACTIVE,1000,DV360
-29,Campaign LI Despite,AWARENESS,ACTIVE,1000,DV360
-30,Campaign LI Near,AWARENESS,ACTIVE,1000,DV360
-31,Campaign LI Soldier,AWARENESS,ACTIVE,1000,DV360
-32,Campaign LI Or,AWARENESS,ACTIVE,1000,DV360
-33,Campaign LI Real,AWARENESS,ACTIVE,1000,DV360
-34,Campaign LI Old,AWARENESS,ACTIVE,1000,DV360
+4,Campaign LI Government,AWARENESS,ACTIVE,1000,DV360
+5,Campaign LI Include,AWARENESS,ACTIVE,1000,DV360
+6,Campaign LI Necessary,AWARENESS,ACTIVE,1000,DV360
+7,Campaign LI White,AWARENESS,ACTIVE,1000,DV360
+8,Campaign LI Cut,AWARENESS,ACTIVE,1000,DV360
+9,Campaign LI Wonder,AWARENESS,ACTIVE,10,DV360
+10,Campaign LI Nor,AWARENESS,ACTIVE,1000,DV360
+11,Campaign LI Should,AWARENESS,ACTIVE,1000,DV360
+12,EV Awareness Launch,AWARENESS,ACTIVE,1550,DV360
+13,New Flavor Consideration,AWARENESS,ACTIVE,1275,DV360
+14,App Acquisition Q4,AWARENESS,ACTIVE,1825,DV360
+15,Campaign LI Our,AWARENESS,ACTIVE,1000,DV360
+16,Campaign LI Use,AWARENESS,ACTIVE,1000,DV360
+17,Campaign LI Series,AWARENESS,ACTIVE,1000,DV360
+18,Campaign LI Organization,AWARENESS,ACTIVE,1000,DV360
+19,Campaign LI Middle,AWARENESS,ACTIVE,1000,DV360
+20,Campaign LI Movie,AWARENESS,ACTIVE,1000,DV360
+21,Campaign LI Public,AWARENESS,ACTIVE,1000,DV360
+22,Campaign LI Key,AWARENESS,ACTIVE,1000,DV360
+23,Campaign LI Against,AWARENESS,ACTIVE,1000,DV360
+24,Campaign LI Management,AWARENESS,ACTIVE,1000,DV360
+25,Campaign LI Human,AWARENESS,ACTIVE,1000,DV360
+26,Campaign LI Mention,AWARENESS,ACTIVE,1000,DV360
+27,Campaign LI Art,AWARENESS,ACTIVE,1000,DV360
 
 ================================================================================
 
@@ -429,5 +415,5 @@ You've now seen all the key advertiser features:
 ✅ Performance forecasting and trend analysis
 ✅ Data export and reporting
 
-Demo completed at: 2025-08-29 18:04:33.549921
+Demo completed at: 2025-08-31 13:24:19.749719
 ================================================================================

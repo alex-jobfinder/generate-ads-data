@@ -1,0 +1,7 @@
+_build/
+_autoapi/
+_doctrees/
+_static/
+_templates/
+.DS_Store
+Thumbs.db
