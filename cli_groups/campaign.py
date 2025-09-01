@@ -538,8 +538,17 @@ def cmd_export_campaign(id: int, format: str, include_performance: bool) -> None
     try:
         from services.export_service import export_campaign
 
-        result = export_campaign(id, format, include_performance)
-        print(json.dumps(result, indent=2))
+        try:
+            result = export_campaign(id, format, include_performance)
+            # If service returns a CSV-like payload, print in a consistent JSON envelope
+            if isinstance(result, dict) and result.get("format") == "csv" and "csv_data" in result:
+                print(json.dumps(result, indent=2))
+            else:
+                print(json.dumps(result, indent=2))
+            return
+        except Exception as e:
+            print(f"❌ {e}")
+            return
     except ImportError:
         try:
             import sqlite3

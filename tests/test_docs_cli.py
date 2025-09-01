@@ -30,6 +30,7 @@ def test_cli_registry_has_db_init() -> None:
 def test_docs_smoke_build_cli_pages(tmp_path: Path) -> None:
     """Build docs and ensure CLI pages are generated (smoke test only)."""
     pytest.importorskip("sphinx")
+    pytest.importorskip("sphinx_click")
     from sphinx.cmd.build import main as sphinx_build_main  # type: ignore
 
     repo_root = Path(__file__).resolve().parents[1]

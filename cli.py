@@ -63,8 +63,42 @@ cli.add_command(variation_group, name="variation")
 cli.add_command(system_group, name="system")
 
 
-# Note: root-level aliases (e.g., `init-db`) have been removed to
-# encourage the grouped style: `cli db init`, `cli campaign create-campaign`, etc.
+# Root-level aliases for streamlined UX expected by tests/docs
+# Analysis/insights commands
+cli.add_command(cmd_compare_campaigns, name="compare-campaigns")
+cli.add_command(cmd_compare_by_objective, name="compare-by-objective")
+cli.add_command(cmd_optimize_cpm, name="optimize-cpm")
+cli.add_command(cmd_project_roi, name="project-roi")
+cli.add_command(cmd_test_creative, name="test-creative")
+cli.add_command(cmd_ab_test, name="ab-test")
+cli.add_command(cmd_forecast, name="forecast")
+cli.add_command(cmd_seasonal_trends, name="seasonal-trends")
+
+# System status shortcut
+cli.add_command(cmd_status, name="status")
+
+# Back-compat root aliases for DB and campaign builders
+cli.add_command(cmd_init_db, name="init-db")
+cli.add_command(cmd_migrate_db, name="migrate-db")
+cli.add_command(cmd_create_advertiser, name="create-advertiser")
+cli.add_command(cmd_create_campaign, name="create-campaign")
+
+# Campaign management commands
+cli.add_command(cmd_generate_performance, name="generate-performance")
+cli.add_command(cmd_generate_performance_ext, name="generate-performance-ext")
+cli.add_command(cmd_create_example, name="create-example")
+cli.add_command(cmd_test_fields, name="test-fields")
+cli.add_command(cmd_create_profile, name="create-profile")
+cli.add_command(cmd_test_scenario, name="test-scenario")
+cli.add_command(cmd_list_campaigns, name="list-campaigns")
+cli.add_command(cmd_export_campaign, name="export-campaign")
+
+# Variation and template commands
+cli.add_command(cmd_create_variations, name="create-variations")
+cli.add_command(cmd_list_templates, name="list-templates")
+
+# System and schema commands
+cli.add_command(cmd_show_schemas, name="show-schemas")
 
 
 if __name__ == "__main__":

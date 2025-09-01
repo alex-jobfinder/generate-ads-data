@@ -18,7 +18,13 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.autosummary",
 ]
-extensions.append("sphinx_click")
+# Make sphinx-click optional for environments without the plugin
+try:  # type: ignore
+    import sphinx_click  # noqa: F401
+
+    extensions.append("sphinx_click")
+except Exception:
+    pass
 
 # Optionally enable typehint rendering extension if installed
 try:  # type: ignore

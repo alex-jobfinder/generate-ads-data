@@ -32,7 +32,7 @@ class TestListCampaigns:
     
     def test_list_campaigns_table_format(self, runner, mock_db):
         """Test table format output for campaigns."""
-        result = runner.invoke(cli, ["list-campaigns", "--format", "table"])
+        result = runner.invoke(cli, ["campaign", "list", "--format", "table"])
         assert result.exit_code == 0
         assert "📊 Campaign List" in result.output
         assert "ID" in result.output
@@ -41,7 +41,7 @@ class TestListCampaigns:
     
     def test_list_campaigns_json_format(self, runner, mock_db):
         """Test JSON format output for campaigns."""
-        result = runner.invoke(cli, ["list-campaigns", "--format", "json"])
+        result = runner.invoke(cli, ["campaign", "list", "--format", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert isinstance(data, list)
@@ -51,19 +51,19 @@ class TestListCampaigns:
     
     def test_list_campaigns_csv_format(self, runner, mock_db):
         """Test CSV format output for campaigns."""
-        result = runner.invoke(cli, ["list-campaigns", "--format", "csv"])
+        result = runner.invoke(cli, ["campaign", "list", "--format", "csv"])
         assert result.exit_code == 0
         assert "ID,Name,Objective,Status,Target CPM,DSP Partner" in result.output
     
     def test_list_campaigns_with_objective_filter(self, runner, mock_db):
         """Test filtering campaigns by objective."""
-        result = runner.invoke(cli, ["list-campaigns", "--objective", "AWARENESS"])
+        result = runner.invoke(cli, ["campaign", "list", "--objective", "AWARENESS"])
         assert result.exit_code == 0
         # Should only show AWARENESS campaigns
     
     def test_list_campaigns_with_status_filter(self, runner, mock_db):
         """Test filtering campaigns by status."""
-        result = runner.invoke(cli, ["list-campaigns", "--status", "ACTIVE"])
+        result = runner.invoke(cli, ["campaign", "list", "--status", "ACTIVE"])
         assert result.exit_code == 0
         # Should only show ACTIVE campaigns
     
@@ -73,7 +73,7 @@ class TestListCampaigns:
         with patch('services.campaign_service.list_campaigns') as mock_list:
             mock_list.return_value = []
             
-            result = runner.invoke(cli, ["list-campaigns"])
+            result = runner.invoke(cli, ["campaign", "list"])
             assert result.exit_code == 0
             # When service returns empty list, CLI should show empty table
             assert "📊 Campaign List" in result.output
@@ -84,7 +84,7 @@ class TestExportCampaign:
     
     def test_export_campaign_json_format(self, runner, mock_db):
         """Test JSON export format."""
-        result = runner.invoke(cli, ["export-campaign", "--id", "1", "--format", "json"])
+        result = runner.invoke(cli, ["campaign", "export", "--id", "1", "--format", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "campaign_id" in data
@@ -93,20 +93,20 @@ class TestExportCampaign:
     
     def test_export_campaign_csv_format(self, runner, mock_db):
         """Test CSV export format."""
-        result = runner.invoke(cli, ["export-campaign", "--id", "1", "--format", "csv"])
+        result = runner.invoke(cli, ["campaign", "export", "--id", "1", "--format", "csv"])
         assert result.exit_code == 0
         assert "Field,Value" in result.output
     
     def test_export_campaign_with_performance(self, runner, mock_db):
         """Test export including performance data."""
-        result = runner.invoke(cli, ["export-campaign", "--id", "1", "--include-performance"])
+        result = runner.invoke(cli, ["campaign", "export", "--id", "1", "--include-performance"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["performance_records"] > 0
     
     def test_export_campaign_without_performance(self, runner, mock_db):
         """Test export excluding performance data."""
-        result = runner.invoke(cli, ["export-campaign", "--id", "1", "--no-include-performance"])
+        result = runner.invoke(cli, ["campaign", "export", "--id", "1", "--no-include-performance"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["performance_records"] == 0
@@ -117,7 +117,7 @@ class TestExportCampaign:
         with patch('services.export_service.export_campaign') as mock_export:
             mock_export.side_effect = ValueError("Campaign 999 not found")
             
-            result = runner.invoke(cli, ["export-campaign", "--id", "999"])
+            result = runner.invoke(cli, ["campaign", "export", "--id", "999"])
             assert result.exit_code == 0
             assert "❌ Campaign 999 not found" in result.output
 

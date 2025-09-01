@@ -22,6 +22,7 @@ logs/
 Thumbs.db
 
 ignore/*
+ignore_db_cli_app/*
 cli_templates_IGNORE/*
 
 .pytest_cache/*

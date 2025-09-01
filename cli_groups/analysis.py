@@ -21,9 +21,15 @@ def cmd_compare_campaigns(campaign1: int, campaign2: int, metrics: str) -> None:
     try:
         from services.comparison_service import compare_campaigns
 
-        metric_list = [m.strip() for m in metrics.split(",")]
-        result = compare_campaigns(campaign1, campaign2, metric_list)
-        print(json.dumps(result, indent=2))
+        try:
+            metric_list = [m.strip() for m in metrics.split(",")]
+            result = compare_campaigns(campaign1, campaign2, metric_list)
+            print(json.dumps(result, indent=2))
+            return
+        except Exception as e:
+            # Gracefully surface service errors expected by tests
+            print(f"❌ {e}")
+            return
     except ImportError:
         try:
             import sqlite3
@@ -79,8 +85,13 @@ def cmd_compare_by_objective(objective: str, top_n: int) -> None:
     """Compare campaigns by objective type."""
     try:
         from services.comparison_service import compare_by_objective
-        result = compare_by_objective(objective, top_n)
-        print(json.dumps(result, indent=2))
+        try:
+            result = compare_by_objective(objective, top_n)
+            print(json.dumps(result, indent=2))
+            return
+        except Exception as e:
+            print(f"❌ {e}")
+            return
     except ImportError:
         try:
             import sqlite3
