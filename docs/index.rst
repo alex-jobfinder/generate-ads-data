@@ -8,10 +8,6 @@ Contents:
    :caption: API Reference
 
    api/cli
-   api/db_api
    api/campaign_api
-   api/analysis_api
-   api/variation_api
-   api/system_api
    cli_commands
    docs_guide
