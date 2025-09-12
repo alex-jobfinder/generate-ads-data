@@ -41,15 +41,22 @@ def fake_advertiser() -> tuple[str, str, str | None, str | None]:
 
 
 def fake_campaign_dates() -> Tuple[date, date]:
-    start = date.today() + timedelta(days=registry.CampaignDefaults.DEFAULT_CAMPAIGN_START_OFFSET_DAYS)
-    end = start + timedelta(
+    # start = date.today() + timedelta(days=registry.CampaignDefaults.DEFAULT_CAMPAIGN_START_OFFSET_DAYS)
+    # end = start + timedelta(
+    #     days=random.randint(
+    #         registry.CampaignDefaults.DEFAULT_CAMPAIGN_MIN_DURATION_DAYS,
+    #         registry.CampaignDefaults.DEFAULT_CAMPAIGN_MAX_DURATION_DAYS,
+    #     )
+    # )
+    # return start, end
+    end = date.today()
+    start = end - timedelta(
         days=random.randint(
             registry.CampaignDefaults.DEFAULT_CAMPAIGN_MIN_DURATION_DAYS,
             registry.CampaignDefaults.DEFAULT_CAMPAIGN_MAX_DURATION_DAYS,
         )
     )
     return start, end
-
 
 def fake_budget_and_cpm() -> tuple[Decimal, str, Decimal]:
     # Clamp CPM within configured bounds, then quantize

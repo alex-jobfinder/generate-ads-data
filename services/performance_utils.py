@@ -42,6 +42,7 @@ def generate_temporal_fields(hour: datetime) -> Dict[str, Any]:
     monthly_start_day_date = date(hour.year, hour.month, 1)
     
     return {
+        "hour_unix_epoch": int(hour.timestamp()),
         "human_readable": hour.strftime("%Y-%m-%d %H:%M:%S %Z"),
         "hour_of_day": hour.hour,
         "minute_of_hour": hour.minute,

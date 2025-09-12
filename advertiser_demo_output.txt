@@ -1,82 +1,206 @@
 🎯 Netflix Ads Data Generator - Advertiser Demo Output
 ================================================================================
 This file contains the complete output from all demo commands
-Generated on: 2025-08-31 13:24:08.446036
+Generated on: 2025-09-11 16:43:06.909597
 ================================================================================
 
 
 ================================================================================
 🔄 Creating aggressive luxury auto awareness campaign
 Command: python cli.py create-profile --name high_cpm_tv_awareness
-✅ Success!
-Output:
-{"campaign_id": 26, "line_item_id": 26, "advertiser_id": 23}
-{
-  "advertiser_id": 23,
-  "campaign_id": 26,
-  "line_item_ids": [
-    1
-  ],
-  "status": "created",
-  "message": "Complete example created successfully"
-}
+❌ Error: Command '['python', 'cli.py', 'create-profile', '--name', 'high_cpm_tv_awareness']' returned non-zero exit status 1.
+STDERR: [31m2025-09-11 16:43:07,915 ERROR services.processor - Failed to create advertiser: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('robin30@robinson-turner.net',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)[0m
+[31m2025-09-11 16:43:07,915 ERROR services.processor - Failed to create complete example: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('robin30@robinson-turner.net',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)[0m
+[31m2025-09-11 16:43:07,915 ERROR services.processor - Failed to create profile: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('robin30@robinson-turner.net',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)[0m
+Traceback (most recent call last):
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: advertisers
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/alex/dbt_ads/generate-ads-data/cli.py", line 105, in <module>
+    cli()
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1363, in main
+    rv = self.invoke(ctx)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1830, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/cli_groups/campaign.py", line 347, in cmd_create_profile
+    result = create_campaign_from_profile(name, override_fields, performance_only=performance_only)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 387, in create_campaign_from_profile
+    return processor.create_campaign_from_profile(profile_name, override_fields, performance_only)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 99, in create_campaign_from_profile
+    return self._create_complete_example(profile, template)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 143, in _create_complete_example
+    advertiser_id = self._create_advertiser(advertiser_data)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 178, in _create_advertiser
+    advertiser_id = persist_advertiser(payload)
+  File "/home/alex/dbt_ads/generate-ads-data/db_utils.py", line 272, in persist_advertiser
+    existing = s.execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('robin30@robinson-turner.net',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 ================================================================================
 
 ================================================================================
 🔄 Creating defensive mobile consideration campaign
 Command: python cli.py create-profile --name mobile_consideration
-✅ Success!
-Output:
-{"campaign_id": 27, "line_item_id": 27, "advertiser_id": 24}
-{
-  "advertiser_id": 24,
-  "campaign_id": 27,
-  "line_item_ids": [
-    1
-  ],
-  "status": "created",
-  "message": "Complete example created successfully"
-}
+❌ Error: Command '['python', 'cli.py', 'create-profile', '--name', 'mobile_consideration']' returned non-zero exit status 1.
+STDERR: [31m2025-09-11 16:43:08,731 ERROR services.processor - Failed to create advertiser: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('lejade@black.info',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)[0m
+[31m2025-09-11 16:43:08,732 ERROR services.processor - Failed to create complete example: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('lejade@black.info',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)[0m
+[31m2025-09-11 16:43:08,732 ERROR services.processor - Failed to create profile: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('lejade@black.info',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)[0m
+Traceback (most recent call last):
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: advertisers
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/alex/dbt_ads/generate-ads-data/cli.py", line 105, in <module>
+    cli()
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1363, in main
+    rv = self.invoke(ctx)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1830, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/cli_groups/campaign.py", line 347, in cmd_create_profile
+    result = create_campaign_from_profile(name, override_fields, performance_only=performance_only)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 387, in create_campaign_from_profile
+    return processor.create_campaign_from_profile(profile_name, override_fields, performance_only)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 99, in create_campaign_from_profile
+    return self._create_complete_example(profile, template)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 143, in _create_complete_example
+    advertiser_id = self._create_advertiser(advertiser_data)
+  File "/home/alex/dbt_ads/generate-ads-data/services/processor.py", line 178, in _create_advertiser
+    advertiser_id = persist_advertiser(payload)
+  File "/home/alex/dbt_ads/generate-ads-data/db_utils.py", line 272, in persist_advertiser
+    existing = s.execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: advertisers
+[SQL: SELECT advertisers.id, advertisers.name, advertisers.status, advertisers.created_at, advertisers.updated_at, advertisers.brand, advertisers.contact_email, advertisers.agency_name 
+FROM advertisers 
+WHERE advertisers.contact_email = ?]
+[parameters: ('lejade@black.info',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
 
 ================================================================================
 
 ================================================================================
 🔄 Listing all campaigns in table format
 Command: python cli.py list-campaigns --format table
-✅ Success!
-Output:
-📊 Campaign List
-================================================================================
-ID   Name                      Objective       Status     CPM      DSP         
---------------------------------------------------------------------------------
-1    EV Awareness Launch       AWARENESS       ACTIVE     $1,550   DV360       
-2    New Flavor Consideration  AWARENESS       ACTIVE     $1,275   DV360       
-3    App Acquisition Q4        AWARENESS       ACTIVE     $1,825   DV360       
-4    Campaign LI Government    AWARENESS       ACTIVE     $1,000   DV360       
-5    Campaign LI Include       AWARENESS       ACTIVE     $1,000   DV360       
-6    Campaign LI Necessary     AWARENESS       ACTIVE     $1,000   DV360       
-7    Campaign LI White         AWARENESS       ACTIVE     $1,000   DV360       
-8    Campaign LI Cut           AWARENESS       ACTIVE     $1,000   DV360       
-9    Campaign LI Wonder        AWARENESS       ACTIVE     $10      DV360       
-10   Campaign LI Nor           AWARENESS       ACTIVE     $1,000   DV360       
-11   Campaign LI Should        AWARENESS       ACTIVE     $1,000   DV360       
-12   EV Awareness Launch       AWARENESS       ACTIVE     $1,550   DV360       
-13   New Flavor Consideration  AWARENESS       ACTIVE     $1,275   DV360       
-14   App Acquisition Q4        AWARENESS       ACTIVE     $1,825   DV360       
-15   Campaign LI Our           AWARENESS       ACTIVE     $1,000   DV360       
-16   Campaign LI Use           AWARENESS       ACTIVE     $1,000   DV360       
-17   Campaign LI Series        AWARENESS       ACTIVE     $1,000   DV360       
-18   Campaign LI Organization  AWARENESS       ACTIVE     $1,000   DV360       
-19   Campaign LI Middle        AWARENESS       ACTIVE     $1,000   DV360       
-20   Campaign LI Movie         AWARENESS       ACTIVE     $1,000   DV360       
-21   Campaign LI Public        AWARENESS       ACTIVE     $1,000   DV360       
-22   Campaign LI Key           AWARENESS       ACTIVE     $1,000   DV360       
-23   Campaign LI Against       AWARENESS       ACTIVE     $1,000   DV360       
-24   Campaign LI Management    AWARENESS       ACTIVE     $1,000   DV360       
-25   Campaign LI Human         AWARENESS       ACTIVE     $1,000   DV360       
-26   Campaign LI Mention       AWARENESS       ACTIVE     $1,000   DV360       
-27   Campaign LI Art           AWARENESS       ACTIVE     $1,000   DV360       
+❌ Error: Command '['python', 'cli.py', 'list-campaigns', '--format', 'table']' returned non-zero exit status 1.
+STDERR: Traceback (most recent call last):
+  File "/home/alex/dbt_ads/generate-ads-data/cli.py", line 105, in <module>
+    cli()
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1363, in main
+    rv = self.invoke(ctx)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1830, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/cli_groups/campaign.py", line 420, in cmd_list_campaigns
+    campaigns = list_campaigns(objective=objective, status=status)
+  File "/home/alex/dbt_ads/generate-ads-data/services/campaign_service.py", line 43, in list_campaigns
+    cursor.execute(query, params)
+sqlite3.OperationalError: no such table: campaigns
 
 ================================================================================
 
@@ -88,17 +212,17 @@ Output:
 {
   "database": {
     "status": "healthy",
-    "size_mb": 22.12
+    "size_mb": 0.0
   },
   "system": {
     "python_version": "3.10.9",
     "working_directory": "/home/alex/dbt_ads/generate-ads-data"
   },
   "campaigns": {
-    "advertisers": 24,
-    "campaigns": 27,
-    "line_items": 27,
-    "creatives": 27,
+    "advertisers": 0,
+    "campaigns": 0,
+    "line_items": 0,
+    "creatives": 0,
     "performance": 0
   }
 }
@@ -110,33 +234,7 @@ Output:
 Command: python cli.py compare-by-objective --objective AWARENESS --top-n 3
 ✅ Success!
 Output:
-{
-  "objective": "AWARENESS",
-  "total_campaigns": 3,
-  "campaigns": [
-    {
-      "id": 3,
-      "name": "App Acquisition Q4",
-      "target_cpm": 1825,
-      "status": "ACTIVE",
-      "dsp_partner": "DV360"
-    },
-    {
-      "id": 14,
-      "name": "App Acquisition Q4",
-      "target_cpm": 1825,
-      "status": "ACTIVE",
-      "dsp_partner": "DV360"
-    },
-    {
-      "id": 1,
-      "name": "EV Awareness Launch",
-      "target_cpm": 1550,
-      "status": "ACTIVE",
-      "dsp_partner": "DV360"
-    }
-  ]
-}
+❌ no such table: campaigns
 
 ================================================================================
 
@@ -347,60 +445,32 @@ Output:
 Command: python cli.py export-campaign --id 1 --format json --include-performance
 ✅ Success!
 Output:
-{
-  "campaign_id": 1,
-  "campaign_data": {
-    "name": "EV Awareness Launch",
-    "status": "ACTIVE",
-    "created_at": "2025-08-30 02:33:28",
-    "updated_at": "2025-08-30 02:33:28",
-    "objective": "AWARENESS",
-    "currency": "USD",
-    "target_cpm": 1550,
-    "dsp_partner": "DV360",
-    "advertiser": "Luxury Auto Co",
-    "brand": "LuxAuto"
-  },
-  "line_items_count": 1,
-  "creatives_count": 1,
-  "performance_records": 100
-}
+❌ no such table: campaigns
 
 ================================================================================
 
 ================================================================================
 🔄 Exporting campaign list in CSV format
 Command: python cli.py list-campaigns --format csv
-✅ Success!
-Output:
-ID,Name,Objective,Status,Target CPM,DSP Partner
-1,EV Awareness Launch,AWARENESS,ACTIVE,1550,DV360
-2,New Flavor Consideration,AWARENESS,ACTIVE,1275,DV360
-3,App Acquisition Q4,AWARENESS,ACTIVE,1825,DV360
-4,Campaign LI Government,AWARENESS,ACTIVE,1000,DV360
-5,Campaign LI Include,AWARENESS,ACTIVE,1000,DV360
-6,Campaign LI Necessary,AWARENESS,ACTIVE,1000,DV360
-7,Campaign LI White,AWARENESS,ACTIVE,1000,DV360
-8,Campaign LI Cut,AWARENESS,ACTIVE,1000,DV360
-9,Campaign LI Wonder,AWARENESS,ACTIVE,10,DV360
-10,Campaign LI Nor,AWARENESS,ACTIVE,1000,DV360
-11,Campaign LI Should,AWARENESS,ACTIVE,1000,DV360
-12,EV Awareness Launch,AWARENESS,ACTIVE,1550,DV360
-13,New Flavor Consideration,AWARENESS,ACTIVE,1275,DV360
-14,App Acquisition Q4,AWARENESS,ACTIVE,1825,DV360
-15,Campaign LI Our,AWARENESS,ACTIVE,1000,DV360
-16,Campaign LI Use,AWARENESS,ACTIVE,1000,DV360
-17,Campaign LI Series,AWARENESS,ACTIVE,1000,DV360
-18,Campaign LI Organization,AWARENESS,ACTIVE,1000,DV360
-19,Campaign LI Middle,AWARENESS,ACTIVE,1000,DV360
-20,Campaign LI Movie,AWARENESS,ACTIVE,1000,DV360
-21,Campaign LI Public,AWARENESS,ACTIVE,1000,DV360
-22,Campaign LI Key,AWARENESS,ACTIVE,1000,DV360
-23,Campaign LI Against,AWARENESS,ACTIVE,1000,DV360
-24,Campaign LI Management,AWARENESS,ACTIVE,1000,DV360
-25,Campaign LI Human,AWARENESS,ACTIVE,1000,DV360
-26,Campaign LI Mention,AWARENESS,ACTIVE,1000,DV360
-27,Campaign LI Art,AWARENESS,ACTIVE,1000,DV360
+❌ Error: Command '['python', 'cli.py', 'list-campaigns', '--format', 'csv']' returned non-zero exit status 1.
+STDERR: Traceback (most recent call last):
+  File "/home/alex/dbt_ads/generate-ads-data/cli.py", line 105, in <module>
+    cli()
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1363, in main
+    rv = self.invoke(ctx)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1830, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/alex/dbt_ads/generate-ads-data/.venv/lib/python3.10/site-packages/click/core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "/home/alex/dbt_ads/generate-ads-data/cli_groups/campaign.py", line 420, in cmd_list_campaigns
+    campaigns = list_campaigns(objective=objective, status=status)
+  File "/home/alex/dbt_ads/generate-ads-data/services/campaign_service.py", line 43, in list_campaigns
+    cursor.execute(query, params)
+sqlite3.OperationalError: no such table: campaigns
 
 ================================================================================
 
@@ -415,5 +485,5 @@ You've now seen all the key advertiser features:
 ✅ Performance forecasting and trend analysis
 ✅ Data export and reporting
 
-Demo completed at: 2025-08-31 13:24:19.749719
+Demo completed at: 2025-09-11 16:43:09.680810
 ================================================================================

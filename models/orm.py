@@ -352,6 +352,7 @@ class CampaignPerformance(Base):
         ForeignKey("campaigns.id", ondelete="CASCADE", onupdate="CASCADE"), index=True, nullable=False
     )
     hour_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    hour_unix_epoch: Mapped[int] = mapped_column(Integer, nullable=False, comment="Unix timestamp of hour_ts")
     impressions: Mapped[int] = mapped_column(Integer, nullable=False)
     clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     video_start: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # Video start count
@@ -609,6 +610,9 @@ class CampaignPerformanceExtended(Base):
         nullable=False,
         index=True,
         comment="Hour timestamp with timezone (grain)",
+    )
+    hour_unix_epoch: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="Unix timestamp of hour_ts"
     )
 
     # Supply funnel

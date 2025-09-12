@@ -329,6 +329,7 @@ def add_extended_metrics_to_performance(campaign_id: int) -> int:
             extended_row = registry.CampaignPerformanceExtended(
                 campaign_id=raw_row.campaign_id,
                 hour_ts=raw_row.hour_ts,
+                hour_unix_epoch=raw_row.hour_unix_epoch,
                 requests=raw_row.requests,
                 responses=raw_row.responses,
                 eligible_impressions=raw_row.eligible_impressions,
